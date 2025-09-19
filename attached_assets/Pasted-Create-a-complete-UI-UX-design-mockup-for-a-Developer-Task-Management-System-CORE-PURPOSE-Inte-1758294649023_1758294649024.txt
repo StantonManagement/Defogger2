@@ -1,0 +1,67 @@
+Create a complete UI/UX design mockup for a Developer Task Management System.
+
+CORE PURPOSE:
+Interface for managing the flow of tasks from ideas → decisions → developer assignments → GitHub issues.
+
+DESIGN THESE PAGES:
+
+1. DASHBOARD (Home)
+- Stats cards: Ready Tasks (number), Assigned Tasks (number), Pending Decisions (number), Team Capacity (visual indicator)
+- Activity feed: Last 5 actions (e.g., "Task pushed to Kurt", "Decision approved")
+- Quick action buttons: Review Tasks, Check Workload, Pending Decisions
+- System health: OneDrive ✓ GitHub ✓ (connection status indicators)
+
+2. READY TASKS
+- Table with columns: Task Title | Priority | Est. Days | Target Dev | Actions
+- Each row has: View Details button, Push to GitHub button
+- Filter bar: By priority, by component, by estimated time
+- Bulk select checkboxes for archiving
+- Search box at top
+
+3. TEAM WORKLOAD
+- Developer cards showing:
+  * Name and profile pic
+  * Current load: 3/5 tasks (progress bar)
+  * Color indicator (green/yellow/red based on load)
+  * Expandable list of their current tasks
+- Summary bar: Total tasks: 15 | Avg per dev: 3 | Available capacity: 8 tasks
+- "Suggest Assignment" smart helper
+
+4. DECISIONS
+- Two tabs: Pending | History
+- Pending shows cards with:
+  * Title, cost, time estimate
+  * Business case preview
+  * Approve/Reject buttons
+- History shows table with date, decision, status badge
+
+5. PUSH TASK MODAL (overlay)
+- Shows when clicking "Push to GitHub"
+- Fields: Issue title, Assignee dropdown, Labels, Priority
+- Preview of how issue will look
+- Warning if assignee is overloaded
+- Confirm/Cancel buttons
+
+6. SETTINGS
+- Three tabs: API Configuration | System | Help
+- API tab has sections for:
+  * OneDrive credentials (with test button)
+  * GitHub credentials (with test button)
+  * Save changes button
+- Show/hide password toggles for sensitive fields
+
+DESIGN REQUIREMENTS:
+- Clean, professional appearance
+- Dark mode option toggle in header
+- Responsive layout (desktop priority, mobile friendly)
+- Color scheme: Blues/grays for professional feel
+- Status colors: Green (good), Yellow (warning), Red (alert)
+- Sans-serif font (Inter or similar)
+- Subtle shadows for depth
+- Toast notifications area (bottom right)
+
+NAVIGATION:
+Fixed sidebar with: Dashboard, Ready Tasks, Team Workload, Decisions, Settings
+Header with: Current repo "Defogger2", user profile, dark mode toggle
+
+Make it feel like a proper project management tool - clean like Linear or GitHub Projects, not cluttered.
