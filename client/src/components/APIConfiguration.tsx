@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, TestTube } from "lucide-react";
+import { Eye, EyeOff, TestTube, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import ConnectionStatus from "./ConnectionStatus";
 
 interface APIConfig {
@@ -19,6 +21,7 @@ interface APIConfig {
 
 export default function APIConfiguration() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showSecrets, setShowSecrets] = useState(false);
   const [config, setConfig] = useState<APIConfig>({
     clientId: '',
@@ -29,38 +32,123 @@ export default function APIConfiguration() {
     githubRepo: ''
   });
   
-  const [connectionStatus, setConnectionStatus] = useState({
-    onedrive: { connected: false, lastConnect: '' },
-    github: { connected: false, repoInfo: '' }
+  const [testResults, setTestResults] = useState<any>(null);
+
+  // Check OneDrive connection status
+  const { data: connectionStatus = {}, refetch: refetchStatus } = useQuery({
+    queryKey: ['/api/onedrive/status'],
+    refetchInterval: 5000 // Check every 5 seconds
   });
+
+  // Connect to OneDrive mutation
+  const connectMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/auth/login');
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+      return data;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Connection Error",
+        description: error.message || "Failed to initiate OneDrive connection",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Test OneDrive connection mutation
+  const testMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/onedrive/test', { method: 'POST' });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setTestResults(data);
+      if (data.success) {
+        toast({
+          title: "OneDrive Test Successful",
+          description: `Found ${data.files?.length || 0} files in ${data.folderPath}`,
+        });
+      } else {
+        toast({
+          title: "OneDrive Test Failed",
+          description: data.error || "Unknown error occurred",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test Connection Error",
+        description: error.message || "Failed to test OneDrive connection",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Disconnect mutation
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/onedrive/disconnect', { method: 'POST' });
+      return await response.json();
+    },
+    onSuccess: () => {
+      refetchStatus();
+      setTestResults(null);
+      toast({
+        title: "Disconnected",
+        description: "Successfully disconnected from OneDrive",
+      });
+    }
+  });
+
+  // Check for connection success on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('connected') === 'true') {
+      toast({
+        title: "OneDrive Connected",
+        description: "Successfully connected to your OneDrive account",
+      });
+      refetchStatus();
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('error') === 'auth_failed') {
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to OneDrive. Please try again.",
+        variant: "destructive"
+      });
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleConfigChange = (field: keyof APIConfig, value: string) => {
     setConfig(prev => ({ ...prev, [field]: value }));
   };
 
-  const testOnedriveConnection = async () => {
-    console.log('Testing OneDrive connection...');
-    // Simulate API test
-    setTimeout(() => {
-      setConnectionStatus(prev => ({
-        ...prev,
-        onedrive: { connected: true, lastConnect: new Date().toLocaleString() }
-      }));
-      toast({
-        title: "OneDrive Connection",
-        description: "Successfully connected to OneDrive",
-      });
-    }, 1000);
+  const handleConnectOneDrive = () => {
+    connectMutation.mutate();
+  };
+
+  const handleTestConnection = () => {
+    testMutation.mutate();
+  };
+
+  const handleDisconnect = () => {
+    disconnectMutation.mutate();
   };
 
   const testGithubConnection = async () => {
     console.log('Testing GitHub connection...');
     // Simulate API test
     setTimeout(() => {
-      setConnectionStatus(prev => ({
-        ...prev,
-        github: { connected: true, repoInfo: `${config.githubRepo} (5 collaborators)` }
-      }));
+      // GitHub functionality is mocked for now
+      console.log('GitHub connection simulated');
       toast({
         title: "GitHub Connection",
         description: "Successfully connected to GitHub repository",
@@ -69,10 +157,11 @@ export default function APIConfiguration() {
   };
 
   const saveConfiguration = () => {
-    console.log('Saving configuration...', config);
+    // Note: In production, secrets should be managed securely via environment variables
+    // This is just for demo purposes
     toast({
-      title: "Configuration Saved",
-      description: "API configuration has been saved to .env file",
+      title: "Configuration Note",
+      description: "API configuration is managed through Replit secrets for security",
     });
   };
 
@@ -85,8 +174,8 @@ export default function APIConfiguration() {
             Microsoft/OneDrive Configuration
             <ConnectionStatus 
               service="OneDrive" 
-              isConnected={connectionStatus.onedrive.connected}
-              lastConnection={connectionStatus.onedrive.lastConnect}
+              isConnected={(connectionStatus as any)?.connected || false}
+              lastConnection={(connectionStatus as any)?.user?.displayName ? `Connected as ${(connectionStatus as any).user.displayName}` : ''}
             />
           </CardTitle>
         </CardHeader>
@@ -149,15 +238,71 @@ export default function APIConfiguration() {
               <p className="text-xs text-muted-foreground mt-1">Auto-generated based on current URL</p>
             </div>
           </div>
-          <Button 
-            onClick={testOnedriveConnection} 
-            variant="outline" 
-            className="flex items-center gap-2"
-            data-testid="button-test-onedrive"
-          >
-            <TestTube className="h-4 w-4" />
-            Test OneDrive Connection
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {!(connectionStatus as any)?.connected ? (
+              <Button 
+                onClick={handleConnectOneDrive}
+                disabled={connectMutation.isPending}
+                className="flex items-center gap-2"
+                data-testid="button-connect-onedrive"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {connectMutation.isPending ? 'Connecting...' : 'Connect to OneDrive'}
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  onClick={handleTestConnection}
+                  disabled={testMutation.isPending}
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  data-testid="button-test-onedrive"
+                >
+                  <TestTube className="h-4 w-4" />
+                  {testMutation.isPending ? 'Testing...' : 'Test Connection'}
+                </Button>
+                <Button 
+                  onClick={handleDisconnect}
+                  disabled={disconnectMutation.isPending}
+                  variant="destructive" 
+                  className="flex items-center gap-2"
+                  data-testid="button-disconnect-onedrive"
+                >
+                  {disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
+                </Button>
+              </>
+            )}
+          </div>
+          
+          {/* Test Results */}
+          {testResults && (
+            <div className="mt-4 p-4 bg-muted rounded-md">
+              <h4 className="font-medium mb-2">Test Results</h4>
+              {testResults.success ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-green-600">✓ Connection successful</p>
+                  <p className="text-sm text-muted-foreground">Folder: {testResults.folderPath}</p>
+                  <p className="text-sm text-muted-foreground">Files found: {testResults.files?.length || 0}</p>
+                  {testResults.files?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium">Recent files:</p>
+                      <ul className="text-xs text-muted-foreground ml-4">
+                        {testResults.files.slice(0, 3).map((file: any, index: number) => (
+                          <li key={index}>• {file.name}</li>
+                        ))}
+                        {testResults.files.length > 3 && <li>... and {testResults.files.length - 3} more</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-600">✗ Connection failed</p>
+                  <p className="text-sm text-muted-foreground">Error: {testResults.error}</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -168,7 +313,7 @@ export default function APIConfiguration() {
             GitHub Configuration
             <ConnectionStatus 
               service="GitHub" 
-              isConnected={connectionStatus.github.connected}
+              isConnected={false}
             />
           </CardTitle>
         </CardHeader>
@@ -196,20 +341,19 @@ export default function APIConfiguration() {
               />
             </div>
           </div>
-          {connectionStatus.github.connected && connectionStatus.github.repoInfo && (
-            <div className="flex items-center gap-2">
-              <Badge variant="default">Connected Repository</Badge>
-              <span className="text-sm text-muted-foreground">{connectionStatus.github.repoInfo}</span>
-            </div>
-          )}
+          <div className="p-3 bg-muted rounded-md">
+            <p className="text-sm text-muted-foreground">
+              GitHub integration coming soon. Focus is currently on OneDrive connectivity.
+            </p>
+          </div>
           <Button 
-            onClick={testGithubConnection} 
+            disabled
             variant="outline" 
             className="flex items-center gap-2"
             data-testid="button-test-github"
           >
             <TestTube className="h-4 w-4" />
-            Test GitHub Connection
+            Coming Soon
           </Button>
         </CardContent>
       </Card>
