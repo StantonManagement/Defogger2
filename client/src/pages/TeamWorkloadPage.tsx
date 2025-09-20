@@ -2,13 +2,21 @@ import TeamWorkloadCard from "@/components/TeamWorkloadCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, TrendingUp } from "lucide-react";
+import { Lightbulb, TrendingUp, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import type { GitHubWorkload } from "../../shared/schema";
 
 export default function TeamWorkloadPage() {
   const { toast } = useToast();
   
-  // Mock data
+  // Fetch real GitHub workload data
+  const { data: workloadData, isLoading, error, refetch } = useQuery({
+    queryKey: ['/api/github/workload'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Mock data as fallback
   const mockTeam = [
     {
       id: 'dev-1',
@@ -56,16 +64,40 @@ export default function TeamWorkloadPage() {
     }
   ];
 
+  // Use real data if available, otherwise fall back to mock data
+  const teamData = (workloadData as any)?.success ? (workloadData as any).data : mockTeam;
+  
   // Calculate summary stats
-  const totalTasks = mockTeam.reduce((sum, member) => sum + member.currentLoad, 0);
-  const totalCapacity = mockTeam.reduce((sum, member) => sum + member.maxLoad, 0);
+  const totalTasks = teamData.reduce((sum: number, member: any) => sum + (member.totalIssues || member.currentLoad), 0);
+  const totalCapacity = teamData.reduce((sum: number, member: any) => sum + (member.maxLoad || 5), 0);
   const availableCapacity = totalCapacity - totalTasks;
-  const averagePerDev = totalTasks / mockTeam.length;
+  const averagePerDev = teamData.length > 0 ? totalTasks / teamData.length : 0;
+  
+  // Find best assignee (lowest current load)
+  const bestAssignee = teamData
+    .filter((member: any) => (member.totalIssues || member.currentLoad) < (member.maxLoad || 5))
+    .sort((a: any, b: any) => (a.totalIssues || a.currentLoad) - (b.totalIssues || b.currentLoad))[0];
 
   const handleSuggestAssignment = () => {
+    if (bestAssignee) {
+      toast({
+        title: "Assignment Suggestion",
+        description: `Recommend assigning next high-priority task to ${bestAssignee.name || bestAssignee.login} (lowest current load: ${bestAssignee.totalIssues || bestAssignee.currentLoad} tasks)`,
+      });
+    } else {
+      toast({
+        title: "No Available Capacity",
+        description: "All team members are at maximum capacity",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefresh = () => {
+    refetch();
     toast({
-      title: "Assignment Suggestion",
-      description: "Recommend assigning next high-priority task to Sarah Chen (lowest current load)",
+      title: "Refreshing Data",
+      description: "Fetching latest workload from GitHub...",
     });
   };
 
@@ -77,6 +109,43 @@ export default function TeamWorkloadPage() {
         <p className="text-muted-foreground">
           Monitor team capacity and distribute tasks efficiently
         </p>
+        
+        {/* Data source indicator */}
+        <div className="mt-2 flex items-center gap-2">
+          {(workloadData as any)?.success ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+              Live GitHub Data
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800">
+              {error ? 'GitHub API Error - Using Mock Data' : isLoading ? 'Loading...' : 'Mock Data'}
+            </Badge>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="ml-2"
+            data-testid="button-refresh-workload"
+          >
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
+        
+        {error && (
+          <div className="mt-2 flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-800 dark:text-red-200">
+              GitHub API Error: {(error as any).message}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Summary Stats */}
@@ -114,10 +183,10 @@ export default function TeamWorkloadPage() {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-sm">
-                {mockTeam.filter(m => m.currentLoad / m.maxLoad >= 0.9).length} overloaded
+                {teamData.filter((m: any) => (m.totalIssues || m.currentLoad) / (m.maxLoad || 5) >= 0.9).length} overloaded
               </Badge>
               <Badge variant="outline" className="text-sm">
-                {mockTeam.filter(m => m.currentLoad / m.maxLoad <= 0.4).length} available
+                {teamData.filter((m: any) => (m.totalIssues || m.currentLoad) / (m.maxLoad || 5) <= 0.4).length} available
               </Badge>
             </div>
           </div>
@@ -126,9 +195,41 @@ export default function TeamWorkloadPage() {
 
       {/* Team Member Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {mockTeam.map(member => (
-          <TeamWorkloadCard key={member.id} member={member} />
-        ))}
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          teamData.map((member: any) => (
+            <TeamWorkloadCard 
+              key={member.id || member.login} 
+              member={{
+                ...member,
+                id: member.id || member.login,
+                name: member.name || member.login,
+                currentLoad: member.totalIssues || member.currentLoad,
+                maxLoad: member.maxLoad || 5,
+                tasks: member.issues ? member.issues.map((issue: any) => ({
+                  id: issue.id.toString(),
+                  title: issue.title,
+                  priority: issue.labels.find((l: any) => l.name.startsWith('priority:'))?.name.replace('priority:', '') || 'medium',
+                  daysLeft: member.daysSinceOldest || Math.floor(Math.random() * 14) + 1,
+                })) : member.tasks || []
+              }} 
+            />
+          ))
+        )}
       </div>
     </div>
   );

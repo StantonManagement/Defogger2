@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getAuthUrl, getTokenFromCode, testOneDriveConnection, getUserInfo } from "./auth";
+import { createGitHubIssue, getTeamWorkload, getRepositoryCollaborators } from "./github";
+import { githubIssueSchema } from "../shared/schema";
 import "./types"; // Import session type extensions
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -98,6 +100,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success: true, 
       message: 'Disconnected from OneDrive' 
     });
+  });
+
+  // GitHub API Routes
+  
+  // Create GitHub issue
+  app.post("/api/github/issue", async (req, res) => {
+    try {
+      const validatedData = githubIssueSchema.parse(req.body);
+      const result = await createGitHubIssue(validatedData);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error: any) {
+      console.error('Error creating GitHub issue:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to create GitHub issue' 
+      });
+    }
+  });
+
+  // Get team workload from GitHub
+  app.get("/api/github/workload", async (req, res) => {
+    try {
+      const result = await getTeamWorkload();
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          data: result.data 
+        });
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error: any) {
+      console.error('Error fetching team workload:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fetch team workload' 
+      });
+    }
+  });
+
+  // Get repository collaborators
+  app.get("/api/github/collaborators", async (req, res) => {
+    try {
+      const result = await getRepositoryCollaborators();
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          data: result.data 
+        });
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error: any) {
+      console.error('Error fetching collaborators:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fetch repository collaborators' 
+      });
+    }
   });
 
   // API health check

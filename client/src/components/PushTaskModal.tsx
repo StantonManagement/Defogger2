@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, GitBranch, User, Tag } from "lucide-react";
+import { AlertTriangle, GitBranch, User, Tag, Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 interface PushTaskModalProps {
   open: boolean;
@@ -21,11 +22,12 @@ interface PushTaskModalProps {
   };
 }
 
-const developers = [
-  { id: 'kurt', name: 'Kurt Anderson', load: 4, maxLoad: 5 },
-  { id: 'sarah', name: 'Sarah Chen', load: 2, maxLoad: 5 },
-  { id: 'mike', name: 'Mike Johnson', load: 5, maxLoad: 5 },
-  { id: 'alex', name: 'Alex Rodriguez', load: 1, maxLoad: 4 },
+// Fallback developers for when GitHub API is not available
+const fallbackDevelopers = [
+  { login: 'kurt', name: 'Kurt Anderson', load: 4, maxLoad: 5 },
+  { login: 'sarah', name: 'Sarah Chen', load: 2, maxLoad: 5 },
+  { login: 'mike', name: 'Mike Johnson', load: 5, maxLoad: 5 },
+  { login: 'alex', name: 'Alex Rodriguez', load: 1, maxLoad: 4 },
 ];
 
 const priorityLabels = {
@@ -44,20 +46,86 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
   });
   const { toast } = useToast();
 
-  const selectedDev = developers.find(dev => dev.id === formData.assignee);
+  // Fetch GitHub collaborators
+  const { data: collaboratorsData, isLoading: loadingCollaborators } = useQuery({
+    queryKey: ['/api/github/collaborators'],
+    enabled: open, // Only fetch when modal is open
+  });
+
+  const collaborators = (collaboratorsData as any)?.data || fallbackDevelopers;
+  const selectedDev = collaborators.find((dev: any) => dev.login === formData.assignee);
   const isOverloaded = selectedDev && selectedDev.load >= selectedDev.maxLoad;
+
+  // GitHub issue creation mutation
+  const createIssueMutation = useMutation({
+    mutationFn: async (issueData: any) => {
+      const response = await fetch('/api/github/issue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(issueData),
+      });
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({
+          title: "GitHub Issue Created!",
+          description: (
+            <div className="space-y-2">
+              <p>Issue #{data.issue.number} created successfully</p>
+              <a 
+                href={data.issue.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View on GitHub
+              </a>
+            </div>
+          ),
+        });
+        onClose();
+      } else {
+        toast({
+          title: "Failed to Create Issue",
+          description: data.error || "Something went wrong",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Create Issue",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Creating GitHub issue with:', formData);
-    
-    toast({
-      title: "GitHub Issue Created",
-      description: `Issue "${formData.title}" has been created and assigned to ${selectedDev?.name || 'unassigned'}`,
-    });
-    
-    onClose();
+    if (!formData.title.trim()) {
+      toast({
+        title: "Title Required",
+        description: "Please provide a title for the GitHub issue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const issueData = {
+      title: formData.title,
+      description: formData.description,
+      priority: formData.priority as 'low' | 'medium' | 'high' | 'urgent',
+      assignee: formData.assignee || undefined,
+      labels: formData.labels.filter(Boolean),
+    };
+
+    createIssueMutation.mutate(issueData);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -74,6 +142,9 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
             <GitBranch className="h-5 w-5" />
             Push Task to GitHub
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Pushing to: <span className="font-mono text-xs">StantonManagement/Defogger2</span>
+          </p>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -113,16 +184,27 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
                 <SelectValue placeholder="Select developer" />
               </SelectTrigger>
               <SelectContent>
-                {developers.map((dev) => (
-                  <SelectItem key={dev.id} value={dev.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{dev.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {dev.load}/{dev.maxLoad} tasks
-                      </span>
+                {loadingCollaborators ? (
+                  <SelectItem value="loading" disabled>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Loading collaborators...
                     </div>
                   </SelectItem>
-                ))}
+                ) : (
+                  collaborators.map((dev: any) => (
+                    <SelectItem key={dev.login} value={dev.login}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{dev.name || dev.login}</span>
+                        {dev.load !== undefined && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {dev.load}/{dev.maxLoad} tasks
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             
@@ -182,7 +264,7 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
               </p>
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-3 w-3" />
-                <span>Assignee: {selectedDev?.name || 'Unassigned'}</span>
+                <span>Assignee: {selectedDev?.name || selectedDev?.login || 'Unassigned'}</span>
               </div>
             </div>
           </div>
@@ -191,8 +273,19 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-confirm-push">
-              Create GitHub Issue
+            <Button 
+              type="submit" 
+              data-testid="button-confirm-push"
+              disabled={createIssueMutation.isPending}
+            >
+              {createIssueMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Issue...
+                </>
+              ) : (
+                'Create GitHub Issue'
+              )}
             </Button>
           </DialogFooter>
         </form>
