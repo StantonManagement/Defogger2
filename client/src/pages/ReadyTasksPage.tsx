@@ -1,13 +1,23 @@
 import { useState } from "react";
 import TasksTable from "@/components/TasksTable";
 import PushTaskModal from "@/components/PushTaskModal";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ReadyTasksPage() {
   const [pushModalOpen, setPushModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
 
-  // Mock data
-  const mockTasks = [
+  // Fetch real mock tasks from API
+  const { data: tasksData, isLoading, error } = useQuery({
+    queryKey: ['/api/mock-tasks'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fallback mock data
+  const fallbackTasks = [
     {
       id: 'TASK-001',
       title: 'Implement user authentication system',
@@ -77,8 +87,11 @@ export default function ReadyTasksPage() {
     }
   ];
 
+  // Use real data if available, otherwise fall back to local mock data
+  const tasks = (tasksData as any)?.success ? (tasksData as any).data : fallbackTasks;
+
   const handlePushToGitHub = (taskId: string) => {
-    const task = mockTasks.find(t => t.id === taskId);
+    const task = tasks.find((t: any) => t.id === taskId);
     if (task) {
       setSelectedTask({
         ...task,
@@ -96,10 +109,46 @@ export default function ReadyTasksPage() {
         <p className="text-muted-foreground">
           Tasks ready for assignment and GitHub integration
         </p>
+        
+        {/* Data source indicator */}
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800">
+            OneDrive: Using Demo Data (MFA pending)
+          </Badge>
+          {(tasksData as any)?.success ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+              Live API Data
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800">
+              Mock Data
+            </Badge>
+          )}
+        </div>
+        
+        {error && (
+          <div className="mt-2 flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-800 dark:text-red-200">
+              API Error: {(error as any).message} - Using fallback data
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Tasks Table */}
-      <TasksTable tasks={mockTasks} onPushToGitHub={handlePushToGitHub} />
+      {isLoading ? (
+        <Card>
+          <CardContent className="flex items-center justify-center p-6">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading tasks...</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <TasksTable tasks={tasks} onPushToGitHub={handlePushToGitHub} />
+      )}
 
       {/* Push Task Modal */}
       <PushTaskModal 
