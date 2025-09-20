@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, TestTube, ExternalLink } from "lucide-react";
+import { Eye, EyeOff, TestTube, ExternalLink, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -180,6 +180,13 @@ export default function APIConfiguration() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* OneDrive Demo Banner */}
+          <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>OneDrive: Using Demo Data (MFA pending)</strong> - Connect your Microsoft account to access real OneDrive data
+            </span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="clientId">Client ID</Label>

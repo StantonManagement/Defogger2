@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Lightbulb, TrendingUp, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import type { GitHubWorkload } from "../../shared/schema";
+import type { GitHubWorkload } from "@shared/schema";
 
 export default function TeamWorkloadPage() {
   const { toast } = useToast();
