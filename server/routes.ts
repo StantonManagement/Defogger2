@@ -168,6 +168,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mock Tasks endpoint for Ready Tasks page
+  app.get("/api/mock-tasks", (req, res) => {
+    const mockTasks = [
+      {
+        id: 'T-001',
+        title: 'User Authentication System',
+        description: 'Implement secure user login and registration with JWT tokens',
+        priority: 'high',
+        component: 'Auth',
+        estimatedDays: 5,
+        assignedTo: '',
+        status: 'ready'
+      },
+      {
+        id: 'T-002', 
+        title: 'Dashboard Analytics',
+        description: 'Create real-time analytics dashboard with charts and metrics',
+        priority: 'medium',
+        component: 'Dashboard',
+        estimatedDays: 8,
+        assignedTo: '',
+        status: 'ready'
+      },
+      {
+        id: 'T-003',
+        title: 'Mobile Responsive Design',
+        description: 'Optimize UI for mobile devices and tablets',
+        priority: 'medium',
+        component: 'UI',
+        estimatedDays: 6,
+        assignedTo: '',
+        status: 'ready'
+      },
+      {
+        id: 'T-004',
+        title: 'API Rate Limiting',
+        description: 'Implement rate limiting for API endpoints to prevent abuse',
+        priority: 'high',
+        component: 'API',
+        estimatedDays: 3,
+        assignedTo: '',
+        status: 'ready'
+      },
+      {
+        id: 'T-005',
+        title: 'Database Migration Tool',
+        description: 'Create automated database migration and seeding system',
+        priority: 'low',
+        component: 'Database',
+        estimatedDays: 4,
+        assignedTo: '',
+        status: 'ready'
+      },
+      {
+        id: 'T-006',
+        title: 'Email Notification Service',
+        description: 'Set up email notifications for important system events',
+        priority: 'medium',
+        component: 'Notifications',
+        estimatedDays: 5,
+        assignedTo: '',
+        status: 'ready'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: mockTasks,
+      count: mockTasks.length
+    });
+  });
+
   // API health check
   app.get("/api/health", (req, res) => {
     res.json({ 
