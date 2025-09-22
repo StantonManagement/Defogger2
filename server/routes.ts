@@ -20,7 +20,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const state = randomBytes(32).toString('hex');
     req.session.oauthState = state;
     
-    const redirectUri = `${req.protocol}://${req.get('host')}/auth/github/callback`;
+    // Use configured callback URL or fallback to dynamic construction
+    const redirectUri = process.env.GITHUB_CALLBACK_URL || `${req.protocol}://${req.get('host')}/auth/github/callback`;
+    console.log(`GitHub OAuth redirect URI: ${redirectUri}`);
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,project,read:org&state=${state}`;
     
     res.redirect(authUrl);
@@ -47,7 +49,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('GitHub OAuth not configured'));
       }
 
-      const redirectUri = `${req.protocol}://${req.get('host')}/auth/github/callback`;
+      // Use configured callback URL or fallback to dynamic construction
+      const redirectUri = process.env.GITHUB_CALLBACK_URL || `${req.protocol}://${req.get('host')}/auth/github/callback`;
+      console.log(`GitHub OAuth callback URI: ${redirectUri}`);
       
       // Exchange code for access token
       const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
