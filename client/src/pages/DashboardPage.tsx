@@ -1,10 +1,15 @@
-import { CheckSquare, Clock, AlertTriangle, Users, Github } from "lucide-react";
+import { CheckSquare, Clock, AlertTriangle, Users, Github, TestTube } from "lucide-react";
 import TaskStatsCard from "@/components/TaskStatsCard";
 import ActivityFeed from "@/components/ActivityFeed";
 import QuickActions from "@/components/QuickActions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface GitHubUser {
   id: string;
@@ -22,11 +27,47 @@ interface UserResponse {
 }
 
 export default function DashboardPage() {
+  const { toast } = useToast();
+  const [issueResponse, setIssueResponse] = useState<any>(null);
+  
   // Fetch user login status
   const { data: user, isLoading: isUserLoading } = useQuery<UserResponse>({
     queryKey: ['/api/user'],
     enabled: true
   });
+
+  // GitHub issue creation mutation
+  const createIssueMutation = useMutation({
+    mutationFn: async (issueData: any) => {
+      const response = await apiRequest('POST', '/api/github/issue', issueData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIssueResponse(data);
+      toast({
+        title: "GitHub Issue Created",
+        description: data.success ? `Issue created successfully! URL: ${data.issue?.url}` : `Error: ${data.error}`,
+        variant: data.success ? "default" : "destructive",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Create Issue",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateTestIssue = () => {
+    const testIssueData = {
+      title: "Test from Defogger2 - OAuth Working",
+      description: "This issue was created via OAuth integration",
+      priority: "low"
+    };
+    
+    createIssueMutation.mutate(testIssueData);
+  };
 
   // Mock data
   const mockActivities = [
@@ -106,6 +147,55 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* GitHub Issue Test Section */}
+      <Card className="border-dashed border-2 border-muted-foreground/25">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TestTube className="h-5 w-5" />
+            <span>GitHub Integration Test</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={handleCreateTestIssue}
+              disabled={createIssueMutation.isPending || !user?.success}
+              data-testid="button-create-test-issue"
+            >
+              {createIssueMutation.isPending ? "Creating Issue..." : "Create Test GitHub Issue"}
+            </Button>
+            {!user?.success && (
+              <Badge variant="secondary">GitHub connection required</Badge>
+            )}
+          </div>
+          
+          {issueResponse && (
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <h4 className="text-sm font-medium mb-3">API Response</h4>
+              <pre className="text-xs bg-background p-3 rounded border overflow-x-auto mb-3" data-testid="text-api-response">
+                {JSON.stringify(issueResponse, null, 2)}
+              </pre>
+              {issueResponse.success && issueResponse.issue?.url && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                    ✅ Issue Created Successfully!
+                  </p>
+                  <a 
+                    href={issueResponse.issue.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-600 dark:text-green-400 hover:underline"
+                    data-testid="link-github-issue"
+                  >
+                    View Issue: {issueResponse.issue.url}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
