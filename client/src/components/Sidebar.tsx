@@ -4,7 +4,7 @@ import {
   BarChart3, 
   CheckSquare, 
   Users, 
-  Vote, 
+  ClipboardCheck, 
   Settings, 
   ChevronLeft,
   ChevronRight,
@@ -17,7 +17,7 @@ const navigationItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/ready-tasks", label: "Ready Tasks", icon: CheckSquare },
   { path: "/team-workload", label: "Team Workload", icon: Users },
-  { path: "/decisions", label: "Decisions", icon: Vote },
+  { path: "/task-review", label: "Task Review", icon: ClipboardCheck },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
