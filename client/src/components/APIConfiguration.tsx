@@ -29,16 +29,34 @@ export default function APIConfiguration() {
     tenantId: '',
     redirectUri: `${window.location.origin}/auth/callback`,
     githubToken: '',
-    githubRepo: ''
+    githubRepo: import.meta.env.VITE_GITHUB_REPO || ''
   });
   
   const [testResults, setTestResults] = useState<any>(null);
+  const [githubTestResults, setGithubTestResults] = useState<any>(null);
+  const [githubConnected, setGithubConnected] = useState(false);
 
   // Check OneDrive connection status
   const { data: connectionStatus = {}, refetch: refetchStatus } = useQuery({
     queryKey: ['/api/onedrive/status'],
     refetchInterval: 5000 // Check every 5 seconds
   });
+
+  // Fetch GitHub configuration
+  const { data: githubConfig } = useQuery({
+    queryKey: ['/api/github/config'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Update repository field when GitHub config is loaded
+  useEffect(() => {
+    if ((githubConfig as any)?.success && (githubConfig as any)?.data?.repository) {
+      setConfig(prev => ({ 
+        ...prev, 
+        githubRepo: (githubConfig as any).data.repository 
+      }));
+    }
+  }, [githubConfig]);
 
   // Connect to OneDrive mutation
   const connectMutation = useMutation({
@@ -143,18 +161,50 @@ export default function APIConfiguration() {
     disconnectMutation.mutate();
   };
 
-  const testGithubConnection = async () => {
-    console.log('Testing GitHub connection...');
-    // Simulate API test
-    setTimeout(() => {
-      // GitHub functionality is mocked for now
-      console.log('GitHub connection simulated');
+  // GitHub test connection mutation
+  const githubTestMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/github/collaborators');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setGithubTestResults(data);
+      if (data.success) {
+        setGithubConnected(true);
+        toast({
+          title: "GitHub Connection Successful",
+          description: `Found ${data.data?.length || 0} collaborators in repository`,
+        });
+      } else {
+        setGithubConnected(false);
+        toast({
+          title: "GitHub Connection Failed",
+          description: data.error || "Unknown error occurred",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      setGithubConnected(false);
+      setGithubTestResults({ success: false, error: error.message });
       toast({
-        title: "GitHub Connection",
-        description: "Successfully connected to GitHub repository",
+        title: "GitHub Test Error",
+        description: error.message || "Failed to test GitHub connection",
+        variant: "destructive"
       });
-    }, 1000);
+    }
+  });
+
+  const handleTestGithub = () => {
+    githubTestMutation.mutate();
   };
+
+  // Auto-test GitHub connection when config is loaded and token exists
+  useEffect(() => {
+    if ((githubConfig as any)?.success && (githubConfig as any)?.data?.hasToken && (githubConfig as any)?.data?.repository) {
+      githubTestMutation.mutate();
+    }
+  }, [githubConfig, githubTestMutation]);
 
   const saveConfiguration = () => {
     // Note: In production, secrets should be managed securely via environment variables
@@ -320,7 +370,8 @@ export default function APIConfiguration() {
             GitHub Configuration
             <ConnectionStatus 
               service="GitHub" 
-              isConnected={false}
+              isConnected={githubConnected}
+              lastConnection={githubConnected ? `Connected to ${config.githubRepo || 'repository'}` : ''}
             />
           </CardTitle>
         </CardHeader>
@@ -348,20 +399,54 @@ export default function APIConfiguration() {
               />
             </div>
           </div>
-          <div className="p-3 bg-muted rounded-md">
-            <p className="text-sm text-muted-foreground">
-              GitHub integration coming soon. Focus is currently on OneDrive connectivity.
-            </p>
+          {/* GitHub Status Banner */}
+          <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <span className="text-sm text-green-800 dark:text-green-200">
+              <strong>GitHub: Active</strong> - Create real GitHub issues and track team workload
+            </span>
           </div>
+          
           <Button 
-            disabled
+            onClick={handleTestGithub}
+            disabled={githubTestMutation.isPending}
             variant="outline" 
             className="flex items-center gap-2"
             data-testid="button-test-github"
           >
             <TestTube className="h-4 w-4" />
-            Coming Soon
+            {githubTestMutation.isPending ? 'Testing...' : 'Test Connection'}
           </Button>
+          
+          {/* GitHub Test Results */}
+          {githubTestResults && (
+            <div className="mt-4 p-4 bg-muted rounded-md">
+              <h4 className="font-medium mb-2">GitHub Test Results</h4>
+              {githubTestResults.success ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-green-600">✓ Connection successful</p>
+                  <p className="text-sm text-muted-foreground">Repository: {config.githubRepo || 'Not specified'}</p>
+                  <p className="text-sm text-muted-foreground">Collaborators found: {githubTestResults.data?.length || 0}</p>
+                  {githubTestResults.data?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium">Collaborators:</p>
+                      <ul className="text-xs text-muted-foreground ml-4">
+                        {githubTestResults.data.slice(0, 3).map((collaborator: any, index: number) => (
+                          <li key={index}>• {collaborator.login}</li>
+                        ))}
+                        {githubTestResults.data.length > 3 && <li>... and {githubTestResults.data.length - 3} more</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-600">✗ Connection failed</p>
+                  <p className="text-sm text-muted-foreground">Error: {githubTestResults.error}</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

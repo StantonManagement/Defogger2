@@ -240,6 +240,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Get GitHub configuration
+  app.get("/api/github/config", (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        repository: process.env.GITHUB_REPO || 'StantonManagement/Defogger2',
+        hasToken: !!process.env.GITHUB_TOKEN
+      }
+    });
+  });
+
   // API health check
   app.get("/api/health", (req, res) => {
     res.json({ 
