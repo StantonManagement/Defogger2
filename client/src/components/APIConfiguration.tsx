@@ -164,7 +164,12 @@ export default function APIConfiguration() {
   // GitHub test connection mutation
   const githubTestMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/github/collaborators');
+      const response = await fetch('/api/github/collaborators', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       return await response.json();
     },
     onSuccess: (data) => {
@@ -172,7 +177,7 @@ export default function APIConfiguration() {
       if (data.success) {
         setGithubConnected(true);
         toast({
-          title: "GitHub Connection Successful",
+          title: "✅ GitHub Connected",
           description: `Found ${data.data?.length || 0} collaborators in repository`,
         });
       } else {
@@ -371,7 +376,7 @@ export default function APIConfiguration() {
             <ConnectionStatus 
               service="GitHub" 
               isConnected={githubConnected}
-              lastConnection={githubConnected ? `Connected to ${config.githubRepo || 'repository'}` : ''}
+              lastConnection={githubConnected ? `✅ Connected to ${(githubConfig as any)?.data?.repository || 'repository'}` : ''}
             />
           </CardTitle>
         </CardHeader>
@@ -381,12 +386,13 @@ export default function APIConfiguration() {
               <Label htmlFor="githubToken">GitHub Token</Label>
               <Input
                 id="githubToken"
-                type={showSecrets ? "text" : "password"}
-                placeholder="ghp_xxxxxxxxxxxx"
-                value={config.githubToken}
-                onChange={(e) => handleConfigChange('githubToken', e.target.value)}
+                type="text"
+                value={(githubConfig as any)?.data?.hasToken ? "••••••••••••••••" : "Not configured"}
+                readOnly
+                className="bg-muted"
                 data-testid="input-github-token"
               />
+              <p className="text-xs text-muted-foreground mt-1">Managed via Replit secrets (GITHUB_TOKEN)</p>
             </div>
             <div>
               <Label htmlFor="githubRepo">Repository</Label>
