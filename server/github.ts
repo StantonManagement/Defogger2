@@ -1,6 +1,27 @@
 import { Octokit } from "@octokit/rest";
 import type { GitHubIssue, GitHubWorkload, GitHubCollaborator } from "../shared/schema";
 
+// Simple in-memory cache
+const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+const CACHE_TTL = {
+  collaborators: 10 * 60 * 1000, // 10 minutes
+  workload: 5 * 60 * 1000, // 5 minutes
+};
+
+function getCached<T>(key: string): T | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < cached.ttl) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any, ttl: number): void {
+  cache.set(key, { data, timestamp: Date.now(), ttl });
+}
+
 const getOctokit = () => {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
@@ -56,8 +77,25 @@ export async function createGitHubIssue(issueData: GitHubIssue) {
 
 export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitHubWorkload[]; error?: string }> {
   try {
-    const octokit = getOctokit();
     const { owner, repo } = getRepoInfo();
+    const cacheKey = `workload:${owner}/${repo}`;
+    
+    // Check cache first
+    const cachedData = getCached<GitHubWorkload[]>(cacheKey);
+    if (cachedData) {
+      return { success: true, data: cachedData };
+    }
+
+    const octokit = getOctokit();
+
+    // Check rate limit before making request
+    const { data: rateLimit } = await octokit.rest.rateLimit.get();
+    if (rateLimit.rate.remaining < 10) {
+      return {
+        success: false,
+        error: `Rate limit low. Remaining: ${rateLimit.rate.remaining}. Resets at ${new Date(rateLimit.rate.reset * 1000).toLocaleTimeString()}`,
+      };
+    }
 
     // Fetch all open issues
     const { data: issues } = await octokit.rest.issues.listForRepo({
@@ -108,6 +146,9 @@ export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitH
 
     const workloadData = Array.from(workloadMap.values());
 
+    // Cache the result
+    setCache(cacheKey, workloadData, CACHE_TTL.workload);
+
     return {
       success: true,
       data: workloadData,
@@ -123,8 +164,25 @@ export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitH
 
 export async function getRepositoryCollaborators(): Promise<{ success: boolean; data?: GitHubCollaborator[]; error?: string }> {
   try {
-    const octokit = getOctokit();
     const { owner, repo } = getRepoInfo();
+    const cacheKey = `collaborators:${owner}/${repo}`;
+    
+    // Check cache first
+    const cachedData = getCached<GitHubCollaborator[]>(cacheKey);
+    if (cachedData) {
+      return { success: true, data: cachedData };
+    }
+
+    const octokit = getOctokit();
+
+    // Check rate limit before making request
+    const { data: rateLimit } = await octokit.rest.rateLimit.get();
+    if (rateLimit.rate.remaining < 10) {
+      return {
+        success: false,
+        error: `Rate limit low. Remaining: ${rateLimit.rate.remaining}. Resets at ${new Date(rateLimit.rate.reset * 1000).toLocaleTimeString()}`,
+      };
+    }
 
     const { data: collaborators } = await octokit.rest.repos.listCollaborators({
       owner,
@@ -138,12 +196,24 @@ export async function getRepositoryCollaborators(): Promise<{ success: boolean; 
       html_url: collaborator.html_url,
     }));
 
+    // Cache the result
+    setCache(cacheKey, collaboratorData, CACHE_TTL.collaborators);
+
     return {
       success: true,
       data: collaboratorData,
     };
   } catch (error: any) {
     console.error("Error fetching collaborators:", error);
+    
+    // If rate limited, provide helpful message
+    if (error.status === 403 && error.message.includes('rate limit')) {
+      return {
+        success: false,
+        error: "GitHub API rate limit exceeded. Please wait before trying again.",
+      };
+    }
+    
     return {
       success: false,
       error: error.message || "Failed to fetch repository collaborators",

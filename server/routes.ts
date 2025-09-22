@@ -251,6 +251,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Get GitHub rate limit status
+  app.get("/api/github/rate-limit", async (req, res) => {
+    try {
+      const { getOctokit } = await import("./github");
+      const octokit = getOctokit();
+      const { data: rateLimit } = await octokit.rest.rateLimit.get();
+      
+      res.json({
+        success: true,
+        data: {
+          remaining: rateLimit.rate.remaining,
+          limit: rateLimit.rate.limit,
+          used: rateLimit.rate.used,
+          reset: new Date(rateLimit.rate.reset * 1000).toISOString(),
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to fetch rate limit status"
+      });
+    }
+  });
+
   // API health check
   app.get("/api/health", (req, res) => {
     res.json({ 

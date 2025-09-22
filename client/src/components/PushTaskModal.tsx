@@ -47,9 +47,11 @@ export default function PushTaskModal({ open, onClose, task }: PushTaskModalProp
   const { toast } = useToast();
 
   // Fetch GitHub collaborators
-  const { data: collaboratorsData, isLoading: loadingCollaborators } = useQuery({
+  const { data: collaboratorsData, isLoading: loadingCollaborators, error } = useQuery({
     queryKey: ['/api/github/collaborators'],
     enabled: open, // Only fetch when modal is open
+    retry: false, // Don't retry on rate limit errors
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const collaborators = (collaboratorsData as any)?.data || fallbackDevelopers;
