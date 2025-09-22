@@ -1,0 +1,119 @@
+Here's the Replit prompt for the dual-mode Task Review interface:
+
+---
+
+## Redesign Task Review Page with Dual Views & Budget Tracking
+
+Replace the current "Decisions" page with a new "Task Review" page that has both card and table views, plus budget tracking.
+
+**STEP 1: Rename & Update Navigation**
+- Change "Decisions" to "Task Review" in Sidebar navigation
+- Update route from `/decisions` to `/task-review`
+- Add description: "Review and approve tasks before pushing to GitHub"
+
+**STEP 2: Create Dual-View Toggle**
+At top right of page, add view toggle:
+```jsx
+<ToggleGroup>
+  <ToggleGroupItem value="cards">📇 Cards</ToggleGroupItem>
+  <ToggleGroupItem value="table">📊 Table</ToggleGroupItem>
+</ToggleGroup>
+```
+Store preference in localStorage.
+
+**STEP 3: Cards View Layout**
+Create card grid (2 columns on desktop, 1 on mobile):
+```jsx
+// Each card should show:
+- Checkbox for multi-select (top left)
+- Priority badge (top right with color)
+- Task title (large, bold)
+- Budget: $X (full project)
+- Timeline: X days estimated
+- Payment: "On Complete" | "50/50" | "25/50/25"
+- Developer: assigned person
+- Action buttons: [View Details] [Push to GitHub]
+```
+
+**STEP 4: Table View Layout**
+Create data table with these columns:
+- Checkbox | Task | Priority | Days | Budget | Payment Terms | Developer | Status | Actions
+
+Features needed:
+- Sortable columns (click header)
+- Inline edit on double-click
+- Hover on budget shows payment breakdown
+- Color-coded priority (🔴 High, 🟡 Med, 🔵 Low)
+
+**STEP 5: Smart Summary Bar**
+Fixed bottom bar showing:
+```
+[X tasks selected | Total: $X | Developer distribution]
+[Push Selected to GitHub] [Export CSV] [Archive]
+```
+
+**STEP 6: Budget Data Structure**
+Mock tasks should include:
+```javascript
+{
+  id: "task-001",
+  title: "SMS Agent Setup",
+  priority: "high",
+  days: 3,
+  budget: 2400,
+  paymentTerms: "on-complete", // or "50-50", "25-50-25"
+  developer: "Kurt",
+  status: "ready",
+  description: "Full markdown content here..."
+}
+```
+
+**STEP 7: Nuclear Switch Confirmation**
+When clicking "Push to GitHub", show modal:
+```
+Title: "🚀 Creating [X] GitHub Issues"
+
+Budget Commitment: $[total]
+- Immediate payments: $[sum of upfront]
+- On completion: $[sum of final]
+
+Assigning to:
+- [Developer]: [X] tasks ($[amount])
+
+[Cancel] [Confirm & Create]
+```
+
+**STEP 8: Payment Breakdown Logic**
+Calculate payment schedules:
+- "on-complete": 100% at end
+- "50-50": 50% start, 50% end
+- "25-50-25": 25% start, 50% middle, 25% end
+
+Show breakdown on hover over budget amount.
+
+**STEP 9: Test Your Implementation**
+1. Toggle between views - ensure data persists
+2. Select multiple tasks - verify total calculations
+3. Mock push to GitHub - console.log the payload
+4. Verify responsive design on mobile
+5. Test sort and filter in table view
+6. Console.log "Task Review page complete!" when loaded
+
+**STEP 10: Keep Mock Data**
+Continue using mock OneDrive data but structure it properly:
+- At least 6 tasks with varying budgets
+- Mix of payment terms
+- Different priorities and developers
+- Some marked "needs-review", others "ready"
+
+**Remember:**
+- This page is the safety gate between Claude creating tasks and developers seeing them
+- One-by-one OR bulk operations both supported
+- Budget visibility is critical for project management
+- Table view for power users, cards for daily use
+
+Test everything and show success messages for each action.
+
+---
+
+This gives you the Excel-like table when you need it, clean cards when you don't, and proper budget tracking throughout. After this is built, we can hook it up to real GitHub API with OAuth.
