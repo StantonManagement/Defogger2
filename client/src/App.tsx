@@ -16,6 +16,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={DashboardPage} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/ready-tasks" component={ReadyTasksPage} />
       <Route path="/team-workload" component={TeamWorkloadPage} />
       <Route path="/task-review" component={TaskReviewPage} />

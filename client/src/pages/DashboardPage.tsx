@@ -1,9 +1,33 @@
-import { CheckSquare, Clock, AlertTriangle, Users } from "lucide-react";
+import { CheckSquare, Clock, AlertTriangle, Users, Github } from "lucide-react";
 import TaskStatsCard from "@/components/TaskStatsCard";
 import ActivityFeed from "@/components/ActivityFeed";
 import QuickActions from "@/components/QuickActions";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface GitHubUser {
+  id: string;
+  login: string;
+  name?: string;
+  avatar_url: string;
+  html_url: string;
+}
+
+interface UserResponse {
+  success: boolean;
+  user?: GitHubUser;
+  error?: string;
+  connected?: boolean;
+}
 
 export default function DashboardPage() {
+  // Fetch user login status
+  const { data: user, isLoading: isUserLoading } = useQuery<UserResponse>({
+    queryKey: ['/api/user'],
+    enabled: true
+  });
+
   // Mock data
   const mockActivities = [
     {
@@ -48,11 +72,39 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your development team's task flow and productivity
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Overview of your development team's task flow and productivity
+          </p>
+        </div>
+        
+        {/* GitHub User Status */}
+        <div className="flex items-center space-x-4">
+          {isUserLoading ? (
+            <Badge variant="secondary" data-testid="status-loading">Loading...</Badge>
+          ) : user?.success && user.user ? (
+            <div className="flex items-center space-x-3" data-testid="user-logged-in">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.user.avatar_url} alt={user.user.login} />
+                <AvatarFallback>{user.user.login?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-2">
+                  <Github className="h-4 w-4" />
+                  <span className="font-medium text-sm">{user.user.login}</span>
+                </div>
+                <Badge variant="default" className="text-xs">Connected</Badge>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2" data-testid="user-not-logged-in">
+              <Github className="h-4 w-4 text-muted-foreground" />
+              <Badge variant="secondary">Not Connected</Badge>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}

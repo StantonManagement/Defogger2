@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.oauthState = undefined;
         
         console.log('OAuth setup complete!');
-        res.redirect('/settings?github_connected=true');
+        res.redirect('/dashboard');
       });
     } catch (error: any) {
       console.error('GitHub OAuth callback error:', error);
