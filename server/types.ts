@@ -7,6 +7,15 @@ declare module 'express-session' {
       displayName: string;
       mail: string;
     };
+    githubAccessToken?: string;
+    githubUser?: {
+      id: number;
+      login: string;
+      avatar_url: string;
+      html_url: string;
+      name?: string;
+    };
+    oauthState?: string;
   }
 }
 

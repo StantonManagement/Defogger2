@@ -22,10 +22,9 @@ function setCache(key: string, data: any, ttl: number): void {
   cache.set(key, { data, timestamp: Date.now(), ttl });
 }
 
-const getOctokit = () => {
-  const token = process.env.GITHUB_TOKEN;
+export const getOctokit = (token: string) => {
   if (!token) {
-    throw new Error("GITHUB_TOKEN is required");
+    throw new Error("GitHub token is required");
   }
   return new Octokit({ auth: token });
 };
@@ -39,9 +38,9 @@ const getRepoInfo = () => {
   return { owner, repo: repoName };
 };
 
-export async function createGitHubIssue(issueData: GitHubIssue) {
+export async function createGitHubIssue(issueData: GitHubIssue, token: string) {
   try {
-    const octokit = getOctokit();
+    const octokit = getOctokit(token);
     const { owner, repo } = getRepoInfo();
 
     const labels = ["assigned", ...(issueData.labels || [])];
@@ -75,7 +74,7 @@ export async function createGitHubIssue(issueData: GitHubIssue) {
   }
 }
 
-export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitHubWorkload[]; error?: string }> {
+export async function getTeamWorkload(token: string): Promise<{ success: boolean; data?: GitHubWorkload[]; error?: string }> {
   try {
     const { owner, repo } = getRepoInfo();
     const cacheKey = `workload:${owner}/${repo}`;
@@ -86,7 +85,7 @@ export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitH
       return { success: true, data: cachedData };
     }
 
-    const octokit = getOctokit();
+    const octokit = getOctokit(token);
 
     // Check rate limit before making request
     const { data: rateLimit } = await octokit.rest.rateLimit.get();
@@ -162,7 +161,7 @@ export async function getTeamWorkload(): Promise<{ success: boolean; data?: GitH
   }
 }
 
-export async function getRepositoryCollaborators(): Promise<{ success: boolean; data?: GitHubCollaborator[]; error?: string }> {
+export async function getRepositoryCollaborators(token: string): Promise<{ success: boolean; data?: GitHubCollaborator[]; error?: string }> {
   try {
     const { owner, repo } = getRepoInfo();
     const cacheKey = `collaborators:${owner}/${repo}`;
@@ -173,7 +172,7 @@ export async function getRepositoryCollaborators(): Promise<{ success: boolean; 
       return { success: true, data: cachedData };
     }
 
-    const octokit = getOctokit();
+    const octokit = getOctokit(token);
 
     // Check rate limit before making request
     const { data: rateLimit } = await octokit.rest.rateLimit.get();

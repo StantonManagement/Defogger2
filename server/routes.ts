@@ -6,6 +6,140 @@ import { githubIssueSchema } from "../shared/schema";
 import "./types"; // Import session type extensions
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // GitHub Authentication Routes
+  
+  // Initiate GitHub OAuth
+  app.get("/auth/github", async (req, res) => {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).json({ error: 'GitHub OAuth not configured' });
+    }
+    
+    // Generate cryptographically random state for CSRF protection
+    const { randomBytes } = await import('crypto');
+    const state = randomBytes(32).toString('hex');
+    req.session.oauthState = state;
+    
+    const redirectUri = `${req.protocol}://${req.get('host')}/auth/github/callback`;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,project,read:org&state=${state}`;
+    
+    res.redirect(authUrl);
+  });
+
+  // Handle GitHub OAuth callback
+  app.get("/auth/github/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code) {
+        return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('Authorization code not provided'));
+      }
+
+      // Validate state parameter to prevent CSRF attacks
+      if (!state || state !== req.session.oauthState) {
+        return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('Invalid state parameter'));
+      }
+
+      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+      
+      if (!clientId || !clientSecret) {
+        return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('GitHub OAuth not configured'));
+      }
+
+      const redirectUri = `${req.protocol}://${req.get('host')}/auth/github/callback`;
+      
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (tokenData.error || !tokenData.access_token) {
+        return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent(tokenData.error_description || 'Failed to get access token'));
+      }
+
+      // Get user info from GitHub
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${tokenData.access_token}`,
+          'User-Agent': 'DevTaskManager',
+        },
+      });
+
+      const userData = await userResponse.json();
+      
+      if (!userData.id) {
+        return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('Failed to get user info'));
+      }
+
+      // Regenerate session to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          return res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent('Session error'));
+        }
+        
+        // Store token and user in new session
+        req.session.githubAccessToken = tokenData.access_token;
+        req.session.githubUser = {
+          id: userData.id,
+          login: userData.login,
+          avatar_url: userData.avatar_url,
+          html_url: userData.html_url,
+          name: userData.name,
+        };
+        
+        // Clear the OAuth state
+        req.session.oauthState = undefined;
+        
+        console.log('OAuth setup complete!');
+        res.redirect('/settings?github_connected=true');
+      });
+    } catch (error: any) {
+      console.error('GitHub OAuth callback error:', error);
+      res.redirect('/settings?error=github_auth_failed&message=' + encodeURIComponent(error.message || 'OAuth failed'));
+    }
+  });
+
+  // Get logged-in user info
+  app.get("/api/user", (req, res) => {
+    if (!req.session.githubAccessToken || !req.session.githubUser) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not logged in with GitHub'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: req.session.githubUser,
+      connected: true
+    });
+  });
+
+  // GitHub logout
+  app.post("/api/github/logout", (req, res) => {
+    req.session.githubAccessToken = undefined;
+    req.session.githubUser = undefined;
+    
+    res.json({
+      success: true,
+      message: 'Logged out from GitHub'
+    });
+  });
+
   // OneDrive Authentication Routes
   
   // Initiate OAuth login
@@ -107,8 +241,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create GitHub issue
   app.post("/api/github/issue", async (req, res) => {
     try {
+      const githubToken = req.session.githubAccessToken;
+      if (!githubToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'GitHub authentication required'
+        });
+      }
+      
       const validatedData = githubIssueSchema.parse(req.body);
-      const result = await createGitHubIssue(validatedData);
+      const result = await createGitHubIssue(validatedData, githubToken);
       
       if (result.success) {
         res.json(result);
@@ -127,7 +269,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get team workload from GitHub
   app.get("/api/github/workload", async (req, res) => {
     try {
-      const result = await getTeamWorkload();
+      const githubToken = req.session.githubAccessToken;
+      if (!githubToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'GitHub authentication required'
+        });
+      }
+      
+      const result = await getTeamWorkload(githubToken);
       
       if (result.success) {
         res.json({ 
@@ -149,7 +299,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get repository collaborators
   app.get("/api/github/collaborators", async (req, res) => {
     try {
-      const result = await getRepositoryCollaborators();
+      const githubToken = req.session.githubAccessToken;
+      if (!githubToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'GitHub authentication required'
+        });
+      }
+      
+      const result = await getRepositoryCollaborators(githubToken);
       
       if (result.success) {
         res.json({ 
@@ -246,7 +404,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success: true,
       data: {
         repository: process.env.GITHUB_REPO || 'StantonManagement/Defogger2',
-        hasToken: !!process.env.GITHUB_TOKEN
+        hasToken: !!req.session.githubAccessToken,
+        connected: !!req.session.githubAccessToken,
+        user: req.session.githubUser
       }
     });
   });
@@ -254,8 +414,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get GitHub rate limit status
   app.get("/api/github/rate-limit", async (req, res) => {
     try {
+      const githubToken = req.session.githubAccessToken;
+      if (!githubToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'GitHub authentication required'
+        });
+      }
+      
       const { getOctokit } = await import("./github");
-      const octokit = getOctokit();
+      const octokit = getOctokit(githubToken);
       const { data: rateLimit } = await octokit.rest.rateLimit.get();
       
       res.json({

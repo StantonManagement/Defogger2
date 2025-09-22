@@ -35,6 +35,7 @@ export default function APIConfiguration() {
   const [testResults, setTestResults] = useState<any>(null);
   const [githubTestResults, setGithubTestResults] = useState<any>(null);
   const [githubConnected, setGithubConnected] = useState(false);
+  const [githubUser, setGithubUser] = useState<any>(null);
 
   // Check OneDrive connection status
   const { data: connectionStatus = {}, refetch: refetchStatus } = useQuery({
@@ -43,18 +44,28 @@ export default function APIConfiguration() {
   });
 
   // Fetch GitHub configuration
-  const { data: githubConfig } = useQuery({
+  const { data: githubConfig, refetch: refetchGithubConfig } = useQuery({
     queryKey: ['/api/github/config'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Update repository field when GitHub config is loaded
+  // Fetch user info
+  const { data: userInfo } = useQuery({
+    queryKey: ['/api/user'],
+    enabled: githubConnected,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Update repository field and connection status when GitHub config is loaded
   useEffect(() => {
-    if ((githubConfig as any)?.success && (githubConfig as any)?.data?.repository) {
+    if ((githubConfig as any)?.success) {
+      const configData = (githubConfig as any).data;
       setConfig(prev => ({ 
         ...prev, 
-        githubRepo: (githubConfig as any).data.repository 
+        githubRepo: configData.repository || prev.githubRepo
       }));
+      setGithubConnected(configData.connected || false);
+      setGithubUser(configData.user || null);
     }
   }, [githubConfig]);
 
@@ -126,21 +137,40 @@ export default function APIConfiguration() {
   // Check for connection success on page load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // OneDrive connection
     if (urlParams.get('connected') === 'true') {
       toast({
         title: "OneDrive Connected",
         description: "Successfully connected to your OneDrive account",
       });
       refetchStatus();
-      // Clear the URL parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('error') === 'auth_failed') {
       toast({
         title: "Connection Failed",
         description: "Failed to connect to OneDrive. Please try again.",
         variant: "destructive"
       });
-      // Clear the URL parameter
+    }
+    
+    // GitHub connection
+    if (urlParams.get('github_connected') === 'true') {
+      toast({
+        title: "GitHub Connected",
+        description: "Successfully connected to your GitHub account",
+      });
+      refetchGithubConfig();
+    } else if (urlParams.get('error') === 'github_auth_failed') {
+      const errorMessage = urlParams.get('message') || 'Failed to connect to GitHub';
+      toast({
+        title: "GitHub Connection Failed",
+        description: decodeURIComponent(errorMessage),
+        variant: "destructive"
+      });
+    }
+    
+    // Clear URL parameters if any auth-related params exist
+    if (urlParams.has('connected') || urlParams.has('error') || urlParams.has('github_connected') || urlParams.has('message')) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -204,12 +234,44 @@ export default function APIConfiguration() {
     githubTestMutation.mutate();
   };
 
-  // Auto-test GitHub connection when config is loaded and token exists
+  // GitHub login mutation
+  const githubLoginMutation = useMutation({
+    mutationFn: async () => {
+      window.location.href = '/auth/github';
+    },
+    onError: (error: any) => {
+      toast({
+        title: "GitHub Login Error",
+        description: error.message || "Failed to initiate GitHub login",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // GitHub logout mutation
+  const githubLogoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/github/logout', { method: 'POST' });
+      return await response.json();
+    },
+    onSuccess: () => {
+      setGithubConnected(false);
+      setGithubUser(null);
+      setGithubTestResults(null);
+      refetchGithubConfig();
+      toast({
+        title: "Logged Out",
+        description: "Successfully logged out from GitHub",
+      });
+    }
+  });
+
+  // Auto-test GitHub connection when connected
   useEffect(() => {
-    if ((githubConfig as any)?.success && (githubConfig as any)?.data?.hasToken && (githubConfig as any)?.data?.repository) {
+    if (githubConnected) {
       githubTestMutation.mutate();
     }
-  }, [githubConfig, githubTestMutation]);
+  }, [githubConnected]);
 
   const saveConfiguration = () => {
     // Note: In production, secrets should be managed securely via environment variables
@@ -381,48 +443,93 @@ export default function APIConfiguration() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="githubToken">GitHub Token</Label>
-              <Input
-                id="githubToken"
-                type="text"
-                value={(githubConfig as any)?.data?.hasToken ? "••••••••••••••••" : "Not configured"}
-                readOnly
-                className="bg-muted"
-                data-testid="input-github-token"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Managed via Replit secrets (GITHUB_TOKEN)</p>
-            </div>
-            <div>
-              <Label htmlFor="githubRepo">Repository</Label>
-              <Input
-                id="githubRepo"
-                placeholder="owner/repository-name"
-                value={config.githubRepo}
-                onChange={(e) => handleConfigChange('githubRepo', e.target.value)}
-                data-testid="input-github-repo"
-              />
-            </div>
-          </div>
-          {/* GitHub Status Banner */}
-          <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-green-800 dark:text-green-200">
-              <strong>GitHub: Active</strong> - Create real GitHub issues and track team workload
-            </span>
-          </div>
-          
-          <Button 
-            onClick={handleTestGithub}
-            disabled={githubTestMutation.isPending}
-            variant="outline" 
-            className="flex items-center gap-2"
-            data-testid="button-test-github"
-          >
-            <TestTube className="h-4 w-4" />
-            {githubTestMutation.isPending ? 'Testing...' : 'Test Connection'}
-          </Button>
+          {!githubConnected ? (
+            <>
+              {/* Not connected state */}
+              <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <span className="text-sm text-orange-800 dark:text-orange-200">
+                  <strong>GitHub: Disconnected</strong> - Connect your GitHub account to access repositories and create issues
+                </span>
+              </div>
+              
+              <div className="text-center py-6">
+                <Button 
+                  onClick={() => githubLoginMutation.mutate()}
+                  disabled={githubLoginMutation.isPending}
+                  className="flex items-center gap-2"
+                  data-testid="button-login-github"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {githubLoginMutation.isPending ? 'Connecting...' : 'Login with GitHub'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  You'll be redirected to GitHub to authorize access
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Connected state */}
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <AlertCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-800 dark:text-green-200">
+                  <strong>GitHub: Connected</strong> - Access repositories, create issues, and track team workload
+                </span>
+              </div>
+              
+              {githubUser && (
+                <div className="flex items-center justify-between p-4 border rounded-md bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={githubUser.avatar_url} 
+                      alt={githubUser.login}
+                      className="w-10 h-10 rounded-full"
+                      data-testid="img-github-avatar"
+                    />
+                    <div>
+                      <p className="font-medium" data-testid="text-github-username">{githubUser.name || githubUser.login}</p>
+                      <p className="text-sm text-muted-foreground">@{githubUser.login}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => githubLogoutMutation.mutate()}
+                    disabled={githubLogoutMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-logout-github"
+                  >
+                    {githubLogoutMutation.isPending ? 'Logging out...' : 'Logout'}
+                  </Button>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="githubRepo">Repository</Label>
+                  <Input
+                    id="githubRepo"
+                    placeholder="owner/repository-name"
+                    value={config.githubRepo}
+                    onChange={(e) => handleConfigChange('githubRepo', e.target.value)}
+                    data-testid="input-github-repo"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Default repository for creating issues</p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleTestGithub}
+                disabled={githubTestMutation.isPending}
+                variant="outline" 
+                className="flex items-center gap-2"
+                data-testid="button-test-github"
+              >
+                <TestTube className="h-4 w-4" />
+                {githubTestMutation.isPending ? 'Testing...' : 'Test Connection'}
+              </Button>
+            </>
+          )}
           
           {/* GitHub Test Results */}
           {githubTestResults && (
