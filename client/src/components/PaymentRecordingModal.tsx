@@ -75,7 +75,7 @@ export default function PaymentRecordingModal({
       developerName: defaultDeveloper || '',
       amount: defaultAmount || 75,
       paymentType: 'test_project',
-      paymentMethod: 'manual',
+      paymentMethod: 'bank_transfer',
       taskTitle: defaultTaskTitle || '',
       notes: '',
     },
@@ -249,17 +249,20 @@ export default function PaymentRecordingModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="manual" data-testid="option-manual">
-                        Manual (Outside Platform)
-                      </SelectItem>
-                      <SelectItem value="onlinejobs" data-testid="option-onlinejobs">
-                        OnlineJobs.ph
+                      <SelectItem value="bank_transfer" data-testid="option-bank-transfer">
+                        Bank Transfer
                       </SelectItem>
                       <SelectItem value="paypal" data-testid="option-paypal">
                         PayPal
                       </SelectItem>
-                      <SelectItem value="wise" data-testid="option-wise">
-                        Wise
+                      <SelectItem value="direct_deposit" data-testid="option-direct-deposit">
+                        Direct Deposit
+                      </SelectItem>
+                      <SelectItem value="check" data-testid="option-check">
+                        Check
+                      </SelectItem>
+                      <SelectItem value="cryptocurrency" data-testid="option-cryptocurrency">
+                        Cryptocurrency
                       </SelectItem>
                     </SelectContent>
                   </Select>

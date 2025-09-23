@@ -1,0 +1,267 @@
+# Update Defogger2: Real Names & Component Classification
+
+## Changes Needed
+
+### 1. Update User Name Throughout
+**Replace all instances of:**
+- "John Developer" → "Alex Korallus-Shapiro"
+- "John" → "Alex"
+- Any generic placeholder names → "Alex Korallus-Shapiro"
+
+**Update in:**
+- Dashboard welcome message
+- User profile/avatar area
+- Any mock data showing task assignments
+- Settings page user info
+- OAuth display name
+
+### 2. Reclassify Test Projects as Components
+
+**Change payment types from:**
+```javascript
+// OLD
+payment_type: 'test_project'
+
+// NEW  
+payment_type: 'component_poc'  // Proof of Concept for main project components
+```
+
+**Update the payment modal dropdown:**
+```jsx
+<Select name="payment_type">
+  <option value="component_poc">Component POC ($75)</option>
+  <option value="component_integration">Component Integration</option>
+  <option value="feature_development">Feature Development</option>
+  <option value="bug_fix">Bug Fix</option>
+  <option value="bonus">Performance Bonus</option>
+</Select>
+```
+
+### 3. Update Mock Payment Data
+
+```javascript
+const mockPayments = [
+  {
+    id: 'pay_001',
+    developer_name: 'Jose Enrico Maxino',
+    task_title: 'Task Queue System Component',
+    amount: 75.00,
+    payment_type: 'component_poc',
+    payment_method: 'manual',
+    payment_status: 'pending',
+    notes: 'Core async processing component for collections system',
+    component: 'task_queue',
+    created_at: new Date()
+  },
+  {
+    id: 'pay_002',
+    developer_name: 'Christian Sumoba',
+    task_title: 'Event Bus System Component',
+    amount: 75.00,
+    payment_type: 'component_poc',
+    payment_method: 'manual',
+    payment_status: 'pending',
+    notes: 'Real-time messaging between collection agents',
+    component: 'event_bus',
+    created_at: new Date()
+  },
+  {
+    id: 'pay_003',
+    developer_name: 'Cedrick Barzaga',  // Using his chosen name
+    task_title: 'Notification Service Component',
+    amount: 75.00,
+    payment_type: 'component_poc',
+    payment_method: 'manual',
+    payment_status: 'pending',
+    notes: 'Multi-channel tenant communication system',
+    component: 'notification_service',
+    created_at: new Date()
+  },
+  {
+    id: 'pay_004',
+    developer_name: 'Gabriel Jerdhy Lapuz',
+    task_title: 'Document Processing Component',
+    amount: 75.00,
+    payment_type: 'component_poc',
+    payment_method: 'manual',
+    payment_status: 'pending',
+    notes: 'OCR for payment receipts and lease documents',
+    component: 'document_processor',
+    created_at: new Date()
+  },
+  {
+    id: 'pay_005',
+    developer_name: 'Paul Limbo',
+    task_title: 'Core API Framework Component',
+    amount: 75.00,
+    payment_type: 'component_poc',
+    payment_method: 'manual',
+    payment_status: 'pending',
+    notes: 'FastAPI foundation for collections system',
+    component: 'api_framework',
+    created_at: new Date()
+  }
+];
+```
+
+### 4. Update Developer List
+
+```javascript
+const developers = [
+  { name: 'Paul Limbo', component: 'API Framework', status: 'poc_in_progress' },
+  { name: 'Jose Enrico Maxino', component: 'Task Queue', status: 'poc_in_progress' },
+  { name: 'Christian Sumoba', component: 'Event Bus', status: 'poc_in_progress' },
+  { name: 'Cedrick Barzaga', component: 'Notifications', status: 'poc_in_progress' },
+  { name: 'Gabriel Jerdhy Lapuz', component: 'Documents', status: 'poc_in_progress' },
+  { name: 'Kurt', component: 'SMS Agent', status: 'active_development' }
+];
+```
+
+### 5. Update Dashboard Header
+
+```jsx
+<DashboardHeader>
+  <h1>Collections System - Component Development</h1>
+  <UserInfo>
+    <Avatar>AK</Avatar>
+    <span>Alex Korallus-Shapiro</span>
+  </UserInfo>
+</DashboardHeader>
+
+<WelcomeMessage>
+  Welcome back, Alex! You have 5 component POCs in progress.
+</WelcomeMessage>
+```
+
+### 6. Add Component View to Payment Dashboard
+
+```jsx
+<ComponentOverview>
+  <h2>System Components Status</h2>
+  <ComponentGrid>
+    <ComponentCard status="in_progress">
+      <h3>📬 Task Queue</h3>
+      <p>Jose Enrico Maxino</p>
+      <span>POC: $75 pending</span>
+    </ComponentCard>
+    
+    <ComponentCard status="in_progress">
+      <h3>📡 Event Bus</h3>
+      <p>Christian Sumoba</p>
+      <span>POC: $75 pending</span>
+    </ComponentCard>
+    
+    <ComponentCard status="in_progress">
+      <h3>📱 Notifications</h3>
+      <p>Cedrick Barzaga</p>
+      <span>POC: $75 pending</span>
+    </ComponentCard>
+    
+    <ComponentCard status="in_progress">
+      <h3>📄 Documents</h3>
+      <p>Gabriel Jerdhy Lapuz</p>
+      <span>POC: $75 pending</span>
+    </ComponentCard>
+    
+    <ComponentCard status="in_progress">
+      <h3>🔧 API Framework</h3>
+      <p>Paul Limbo</p>
+      <span>POC: $75 pending</span>
+    </ComponentCard>
+    
+    <ComponentCard status="active">
+      <h3>💬 SMS Agent</h3>
+      <p>Kurt</p>
+      <span>Active Development</span>
+    </ComponentCard>
+  </ComponentGrid>
+</ComponentOverview>
+```
+
+### 7. Update Stats to Reflect Components
+
+```jsx
+<StatCards>
+  <Card title="Components in POC" value="5" icon="🔨" />
+  <Card title="Total POC Investment" value="$375" />
+  <Card title="Pending Payments" value="$375" count="5 components" />
+  <Card title="Active Developers" value="6" />
+</StatCards>
+```
+
+### 8. Remove All Dummy Data
+
+**Remove these fake developers if they exist:**
+- John Doe
+- Jane Smith
+- Bob Wilson
+- Alice Johnson
+- Any other placeholder names
+
+**Keep only:**
+- Paul Limbo
+- Jose Enrico Maxino
+- Christian Sumoba
+- Cedrick Barzaga
+- Gabriel Jerdhy Lapuz
+- Kurt
+
+### 9. Update Payment History View
+
+```jsx
+<PaymentHistory>
+  <h2>Component Development Payments</h2>
+  <Timeline>
+    <TimelineItem>
+      <Date>Today</Date>
+      <Description>
+        5 Component POCs initiated - $375 total
+        <Components>
+          • Task Queue (Jose) - Background processing
+          • Event Bus (Christian) - Inter-agent communication
+          • Notifications (Cedrick) - Tenant outreach
+          • Documents (Gabriel) - OCR processing
+          • API Framework (Paul) - System foundation
+        </Components>
+      </Description>
+    </TimelineItem>
+  </Timeline>
+</PaymentHistory>
+```
+
+### 10. Quick SQL Update for Existing Data
+
+```sql
+-- Update any existing test payments to component POCs
+UPDATE developer_payments 
+SET payment_type = 'component_poc',
+    notes = CONCAT(notes, ' - Core system component')
+WHERE payment_type = 'test_project';
+
+-- Add component field if not exists
+ALTER TABLE developer_payments 
+ADD COLUMN component VARCHAR(50);
+
+-- Map developers to components
+UPDATE developer_payments 
+SET component = CASE developer_name
+  WHEN 'Jose Enrico Maxino' THEN 'task_queue'
+  WHEN 'Christian Sumoba' THEN 'event_bus'
+  WHEN 'Cedrick Barzaga' THEN 'notification_service'
+  WHEN 'Gabriel Jerdhy Lapuz' THEN 'document_processor'
+  WHEN 'Paul Limbo' THEN 'api_framework'
+  WHEN 'Kurt' THEN 'sms_agent'
+END;
+```
+
+## Summary of Changes
+
+1. ✅ Replace all "John Developer" → "Alex Korallus-Shapiro"
+2. ✅ Reclassify "test_project" → "component_poc" 
+3. ✅ Use Cedrick Barzaga (his chosen name)
+4. ✅ Frame as foundation components, not just tests
+5. ✅ Show component overview on dashboard
+6. ✅ Remove all dummy developers
+7. ✅ Add component tracking to payments
+
+These POCs are building your actual collections system foundation - they deserve to be classified as real deliverables, not just tests!

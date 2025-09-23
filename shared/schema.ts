@@ -82,7 +82,7 @@ export const paymentFormSchema = z.object({
   developerName: z.string().min(1, "Developer is required"),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   paymentType: z.enum(["test_project", "task", "bonus"]),
-  paymentMethod: z.enum(["manual", "onlinejobs", "paypal", "wise"]),
+  paymentMethod: z.enum(["bank_transfer", "paypal", "direct_deposit", "check", "cryptocurrency"]),
   taskId: z.string().optional(),
   taskTitle: z.string().optional(),
   notes: z.string().optional(),
