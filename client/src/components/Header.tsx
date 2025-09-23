@@ -42,8 +42,8 @@ export default function Header() {
         {/* Left section */}
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-lg font-semibold">Defogger2</h1>
-            <p className="text-xs text-muted-foreground">Task Management System</p>
+            <h1 className="text-lg font-semibold">Collections System</h1>
+            <p className="text-xs text-muted-foreground">Component Development</p>
           </div>
         </div>
 
@@ -95,10 +95,10 @@ export default function Header() {
           {/* User Profile */}
           <div className="flex items-center gap-2 pl-2">
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-              JD
+              AK
             </div>
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium">John Developer</p>
+              <p className="text-sm font-medium">Alex Korallus-Shapiro</p>
               <p className="text-xs text-muted-foreground">Admin</p>
             </div>
           </div>

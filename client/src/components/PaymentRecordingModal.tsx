@@ -74,7 +74,7 @@ export default function PaymentRecordingModal({
     defaultValues: {
       developerName: defaultDeveloper || '',
       amount: defaultAmount || 75,
-      paymentType: 'test_project',
+      paymentType: 'component_poc',
       paymentMethod: 'bank_transfer',
       taskTitle: defaultTaskTitle || '',
       notes: '',
@@ -213,14 +213,20 @@ export default function PaymentRecordingModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="test_project" data-testid="option-test-project">
-                        Test Project ($75)
+                      <SelectItem value="component_poc" data-testid="option-component-poc">
+                        Component POC ($75)
                       </SelectItem>
-                      <SelectItem value="task" data-testid="option-task">
-                        Task Payment
+                      <SelectItem value="component_integration" data-testid="option-component-integration">
+                        Component Integration
+                      </SelectItem>
+                      <SelectItem value="feature_development" data-testid="option-feature-development">
+                        Feature Development
+                      </SelectItem>
+                      <SelectItem value="bug_fix" data-testid="option-bug-fix">
+                        Bug Fix
                       </SelectItem>
                       <SelectItem value="bonus" data-testid="option-bonus">
-                        Bonus
+                        Performance Bonus
                       </SelectItem>
                     </SelectContent>
                   </Select>

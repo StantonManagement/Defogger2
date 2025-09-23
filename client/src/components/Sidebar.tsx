@@ -90,10 +90,10 @@ export default function Sidebar() {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-              JD
+              AK
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Developer</p>
+              <p className="text-sm font-medium truncate">Alex Korallus-Shapiro</p>
               <p className="text-xs text-muted-foreground">Admin</p>
             </div>
           </div>

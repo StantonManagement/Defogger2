@@ -81,7 +81,7 @@ export type PaymentStats = z.infer<typeof paymentStatsSchema>;
 export const paymentFormSchema = z.object({
   developerName: z.string().min(1, "Developer is required"),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
-  paymentType: z.enum(["test_project", "task", "bonus"]),
+  paymentType: z.enum(["component_poc", "component_integration", "feature_development", "bug_fix", "bonus"]),
   paymentMethod: z.enum(["bank_transfer", "paypal", "direct_deposit", "check", "cryptocurrency"]),
   taskId: z.string().optional(),
   taskTitle: z.string().optional(),
