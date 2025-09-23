@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Moon, Sun, Search, Bell, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import ProjectSelector from "@/components/ProjectSelector";
 
 export default function Header() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentProject, setCurrentProject] = useState('collections_system');
 
   // Theme management
   useEffect(() => {
@@ -36,15 +38,28 @@ export default function Header() {
     }
   };
 
+  const handleProjectChange = (projectId: string) => {
+    setCurrentProject(projectId);
+    // TODO: Implement project filtering logic
+    console.log('Project changed to:', projectId);
+  };
+
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between h-full px-6">
         {/* Left section */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div>
             <h1 className="text-lg font-semibold">Collections System</h1>
             <p className="text-xs text-muted-foreground">Component Development</p>
           </div>
+          
+          <div className="h-8 w-px bg-border" />
+          
+          <ProjectSelector 
+            currentProject={currentProject}
+            onProjectChange={handleProjectChange}
+          />
         </div>
 
         {/* Center section - Search */}

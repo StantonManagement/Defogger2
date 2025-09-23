@@ -14,6 +14,7 @@ import TeamWorkloadPage from "@/pages/TeamWorkloadPage";
 import TaskReviewPage from "@/pages/TaskReviewPage";
 import PaymentDashboard from "@/pages/PaymentDashboard";
 import DeveloperLedger from "@/pages/DeveloperLedger";
+import MasterDashboard from "@/pages/MasterDashboard";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/task-review" component={TaskReviewPage} />
       <Route path="/payments" component={PaymentDashboard} />
       <Route path="/payments/ledger" component={DeveloperLedger} />
+      <Route path="/master-dashboard" component={MasterDashboard} />
       <Route path="/decisions">
         <Redirect to="/task-review" />
       </Route>

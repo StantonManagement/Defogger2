@@ -836,6 +836,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Multi-project API routes
+  
+  // Multi-project stats endpoint
+  app.get('/api/projects/stats', async (req, res) => {
+    try {
+      const stats = await storage.getMultiProjectStats();
+      res.json({ success: true, data: stats });
+    } catch (error: any) {
+      console.error('Failed to get multi-project stats:', error);
+      res.status(500).json({ success: false, error: 'Failed to get multi-project stats' });
+    }
+  });
+
+  // Project management endpoints
+  app.get('/api/projects', async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      res.json({ success: true, data: projects });
+    } catch (error: any) {
+      console.error('Failed to get projects:', error);
+      res.status(500).json({ success: false, error: 'Failed to get projects' });
+    }
+  });
+
+  app.get('/api/projects/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ success: false, error: 'Project not found' });
+      }
+      res.json({ success: true, data: project });
+    } catch (error: any) {
+      console.error('Failed to get project:', error);
+      res.status(500).json({ success: false, error: 'Failed to get project' });
+    }
+  });
+
+  app.post('/api/projects', async (req, res) => {
+    try {
+      const projectData = req.body;
+      const project = await storage.createProject(projectData);
+      res.json({ success: true, data: project });
+    } catch (error: any) {
+      console.error('Failed to create project:', error);
+      res.status(500).json({ success: false, error: 'Failed to create project' });
+    }
+  });
+
+  app.put('/api/projects/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const project = await storage.updateProject(id, updates);
+      res.json({ success: true, data: project });
+    } catch (error: any) {
+      console.error('Failed to update project:', error);
+      res.status(500).json({ success: false, error: 'Failed to update project' });
+    }
+  });
+
+  // Component dependency endpoints
+  app.get('/api/projects/:projectId/dependencies', async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const dependencies = await storage.getComponentDependencies(projectId);
+      res.json({ success: true, data: dependencies });
+    } catch (error: any) {
+      console.error('Failed to get dependencies:', error);
+      res.status(500).json({ success: false, error: 'Failed to get dependencies' });
+    }
+  });
+
+  app.post('/api/projects/:projectId/dependencies', async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const dependencyData = { ...req.body, project: projectId };
+      const dependency = await storage.addComponentDependency(dependencyData);
+      res.json({ success: true, data: dependency });
+    } catch (error: any) {
+      console.error('Failed to add dependency:', error);
+      res.status(500).json({ success: false, error: 'Failed to add dependency' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -12,13 +12,15 @@ import {
   FileText,
   FolderOpen,
   DollarSign,
-  CreditCard
+  CreditCard,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
   { path: "/", label: "Dashboard", icon: Home },
+  { path: "/master-dashboard", label: "Master Dashboard", icon: Target },
   { path: "/workflow", label: "Workflow Guide", icon: FileText },
   { path: "/tasks", label: "Tasks", icon: FolderOpen },
   { path: "/workload", label: "Team Workload", icon: Users },
