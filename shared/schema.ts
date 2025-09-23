@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -16,6 +16,79 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Payment Tracking Tables
+export const developerPayments = pgTable("developer_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  developerName: varchar("developer_name", { length: 100 }).notNull(),
+  taskId: varchar("task_id", { length: 200 }),
+  taskTitle: varchar("task_title", { length: 500 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentType: varchar("payment_type", { length: 50 }), // 'test_project', 'task', 'bonus'
+  paymentMethod: varchar("payment_method", { length: 50 }), // 'manual', 'onlinejobs', 'paypal', 'wise'
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'sent', 'confirmed'
+  paymentDate: timestamp("payment_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").default(sql`NOW()`),
+  updatedAt: timestamp("updated_at").default(sql`NOW()`),
+});
+
+export const developerLedger = pgTable("developer_ledger", {
+  developerName: varchar("developer_name", { length: 100 }).primaryKey(),
+  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).default("0"),
+  totalPending: decimal("total_pending", { precision: 10, scale: 2 }).default("0"),
+  lastPaymentDate: timestamp("last_payment_date"),
+  paymentCount: integer("payment_count").default(0),
+  joinedDate: timestamp("joined_date").default(sql`NOW()`),
+  active: boolean("active").default(true),
+});
+
+export const insertDeveloperPaymentSchema = createInsertSchema(developerPayments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeveloperLedgerSchema = createInsertSchema(developerLedger).omit({
+  joinedDate: true,
+});
+
+export type DeveloperPayment = typeof developerPayments.$inferSelect;
+export type InsertDeveloperPayment = z.infer<typeof insertDeveloperPaymentSchema>;
+
+export type DeveloperLedger = typeof developerLedger.$inferSelect;
+export type InsertDeveloperLedger = z.infer<typeof insertDeveloperLedgerSchema>;
+
+// Payment Statistics Schema
+export const paymentStatsSchema = z.object({
+  totalPaid: z.number(),
+  totalPending: z.number(),
+  activeDevelopers: z.number(),
+  thisMonth: z.number(),
+  recentPayments: z.array(z.object({
+    id: z.string(),
+    developerName: z.string(),
+    amount: z.number(),
+    paymentStatus: z.string(),
+    paymentDate: z.string().nullable(),
+    taskTitle: z.string().nullable(),
+  })),
+});
+
+export type PaymentStats = z.infer<typeof paymentStatsSchema>;
+
+// Payment Form Schema
+export const paymentFormSchema = z.object({
+  developerName: z.string().min(1, "Developer is required"),
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  paymentType: z.enum(["test_project", "task", "bonus"]),
+  paymentMethod: z.enum(["manual", "onlinejobs", "paypal", "wise"]),
+  taskId: z.string().optional(),
+  taskTitle: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type PaymentForm = z.infer<typeof paymentFormSchema>;
 
 // GitHub Issue Schema
 export const githubIssueSchema = z.object({
