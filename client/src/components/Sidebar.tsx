@@ -19,15 +19,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
-  { path: "/", label: "Dashboard", icon: Home },
   { path: "/master-dashboard", label: "Master Dashboard", icon: Target },
-  { path: "/workflow", label: "Workflow Guide", icon: FileText },
+  { path: "/", label: "Dashboard", icon: Home },
+  { path: "/ready-tasks", label: "Ready Tasks", icon: CheckSquare },
   { path: "/tasks", label: "Tasks", icon: FolderOpen },
   { path: "/workload", label: "Team Workload", icon: Users },
-  { path: "/ready-tasks", label: "Ready Tasks", icon: CheckSquare },
   { path: "/task-review", label: "Task Review", icon: ClipboardCheck },
   { path: "/payments", label: "Payments", icon: DollarSign },
   { path: "/payments/ledger", label: "Developer Ledger", icon: CreditCard },
+  { path: "/workflow", label: "Workflow Guide", icon: FileText },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
