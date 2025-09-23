@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getAuthUrl, getTokenFromCode, testOneDriveConnection, getUserInfo } from "./auth";
 import { createGitHubIssue, getTeamWorkload, getRepositoryCollaborators } from "./github";
-import { githubIssueSchema } from "../shared/schema";
+import { githubIssueSchema, paymentFormSchema } from "../shared/schema";
+import { storage } from "./storage";
 import "./types"; // Import session type extensions
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -592,6 +593,245 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: error.message || 'Failed to fetch workflow documentation' 
+      });
+    }
+  });
+
+  // ==================== PAYMENT API ENDPOINTS ====================
+
+  // GET /api/payments - Get list of all payments with filters
+  app.get("/api/payments", async (req, res) => {
+    try {
+      const { developer, status, from_date, to_date } = req.query;
+      
+      const filters = {
+        developerName: developer as string | undefined,
+        status: status as string | undefined,
+        fromDate: from_date as string | undefined,
+        toDate: to_date as string | undefined,
+      };
+
+      const payments = await storage.getPayments(filters);
+      
+      res.json({
+        success: true,
+        data: payments,
+        count: payments.length,
+      });
+    } catch (error: any) {
+      console.error('Error fetching payments:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch payments',
+      });
+    }
+  });
+
+  // POST /api/payments - Record a new payment
+  app.post("/api/payments", async (req, res) => {
+    try {
+      // Validate request body using Zod schema
+      const validatedData = paymentFormSchema.parse(req.body);
+      
+      // Convert amount to string for storage (decimal fields are stored as strings)
+      const paymentData = {
+        ...validatedData,
+        amount: validatedData.amount.toString(),
+      };
+      
+      const payment = await storage.createPayment(paymentData);
+      
+      res.status(201).json({
+        success: true,
+        data: payment,
+        message: 'Payment recorded successfully',
+      });
+    } catch (error: any) {
+      console.error('Error creating payment:', error);
+      
+      if (error.name === 'ZodError') {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: error.errors,
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to create payment',
+      });
+    }
+  });
+
+  // GET /api/payments/ledger - Get all developer ledgers
+  app.get("/api/payments/ledger", async (req, res) => {
+    try {
+      const ledgers = await storage.getDeveloperLedgers();
+      
+      // Include recent payments for each developer
+      const ledgersWithPayments = await Promise.all(
+        ledgers.map(async (ledger) => {
+          const recentPayments = await storage.getPayments({ 
+            developerName: ledger.developerName 
+          });
+          
+          return {
+            ...ledger,
+            recentPayments: recentPayments.slice(0, 3), // Last 3 payments
+          };
+        })
+      );
+      
+      res.json({
+        success: true,
+        data: ledgersWithPayments,
+      });
+    } catch (error: any) {
+      console.error('Error fetching ledger:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch developer ledger',
+      });
+    }
+  });
+
+  // PUT /api/payments/:id/status - Update payment status
+  app.put("/api/payments/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!status || !['pending', 'sent', 'confirmed'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid payment status. Must be pending, sent, or confirmed',
+        });
+      }
+      
+      const updatedPayment = await storage.updatePaymentStatus(id, status);
+      
+      if (!updatedPayment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found',
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: updatedPayment,
+        message: `Payment status updated to ${status}`,
+      });
+    } catch (error: any) {
+      console.error('Error updating payment status:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to update payment status',
+      });
+    }
+  });
+
+  // GET /api/payments/stats - Dashboard statistics
+  app.get("/api/payments/stats", async (req, res) => {
+    try {
+      const stats = await storage.getPaymentStats();
+      
+      res.json({
+        success: true,
+        data: stats,
+      });
+    } catch (error: any) {
+      console.error('Error fetching payment stats:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch payment statistics',
+      });
+    }
+  });
+
+  // POST /api/payments/bulk - Mark multiple payments as paid (for test projects)
+  app.post("/api/payments/bulk", async (req, res) => {
+    try {
+      const { payment_ids, status } = req.body;
+      
+      if (!payment_ids || !Array.isArray(payment_ids) || payment_ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'payment_ids array is required and cannot be empty',
+        });
+      }
+      
+      if (!status || !['pending', 'sent', 'confirmed'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid payment status. Must be pending, sent, or confirmed',
+        });
+      }
+      
+      const updatedPayments = await storage.bulkUpdatePaymentStatus(payment_ids, status);
+      
+      res.json({
+        success: true,
+        data: updatedPayments,
+        message: `${updatedPayments.length} payments updated to ${status}`,
+        count: updatedPayments.length,
+      });
+    } catch (error: any) {
+      console.error('Error bulk updating payments:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to update payments',
+      });
+    }
+  });
+
+  // GET /api/payments/:id - Get single payment details
+  app.get("/api/payments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const payment = await storage.getPayment(id);
+      
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found',
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: payment,
+      });
+    } catch (error: any) {
+      console.error('Error fetching payment:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch payment',
+      });
+    }
+  });
+
+  // GET /api/developers - Get list of developers for dropdowns
+  app.get("/api/developers", async (req, res) => {
+    try {
+      const ledgers = await storage.getDeveloperLedgers();
+      const developers = ledgers.map(ledger => ({
+        name: ledger.developerName,
+        active: ledger.active,
+        totalPaid: parseFloat(ledger.totalPaid || '0'),
+        totalPending: parseFloat(ledger.totalPending || '0'),
+      }));
+      
+      res.json({
+        success: true,
+        data: developers,
+      });
+    } catch (error: any) {
+      console.error('Error fetching developers:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch developers',
       });
     }
   });

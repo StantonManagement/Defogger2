@@ -189,15 +189,19 @@ export class MemStorage implements IStorage {
     
     if (filters?.fromDate) {
       const fromDate = new Date(filters.fromDate);
-      payments = payments.filter(p => p.createdAt >= fromDate);
+      payments = payments.filter(p => p.createdAt && p.createdAt >= fromDate);
     }
     
     if (filters?.toDate) {
       const toDate = new Date(filters.toDate);
-      payments = payments.filter(p => p.createdAt <= toDate);
+      payments = payments.filter(p => p.createdAt && p.createdAt <= toDate);
     }
     
-    return payments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return payments.sort((a, b) => {
+      const aTime = a.createdAt?.getTime() || 0;
+      const bTime = b.createdAt?.getTime() || 0;
+      return bTime - aTime;
+    });
   }
 
   async getPayment(id: string): Promise<DeveloperPayment | undefined> {
@@ -208,8 +212,16 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const now = new Date();
     const payment: DeveloperPayment = {
-      ...insertPayment,
       id,
+      developerName: insertPayment.developerName,
+      taskId: insertPayment.taskId || null,
+      taskTitle: insertPayment.taskTitle || null,
+      amount: insertPayment.amount,
+      paymentType: insertPayment.paymentType || null,
+      paymentMethod: insertPayment.paymentMethod || null,
+      paymentStatus: insertPayment.paymentStatus || 'pending',
+      paymentDate: insertPayment.paymentDate || null,
+      notes: insertPayment.notes || null,
       createdAt: now,
       updatedAt: now,
     };
@@ -254,7 +266,7 @@ export class MemStorage implements IStorage {
     }
     
     // Update ledgers for affected developers
-    for (const developerName of developersToUpdate) {
+    for (const developerName of Array.from(developersToUpdate)) {
       await this.updateLedgerAfterPaymentChange(developerName);
     }
     
@@ -311,8 +323,8 @@ export class MemStorage implements IStorage {
     const payments = await this.getPayments();
     const ledgers = await this.getDeveloperLedgers();
     
-    const totalPaid = ledgers.reduce((sum, l) => sum + parseFloat(l.totalPaid), 0);
-    const totalPending = ledgers.reduce((sum, l) => sum + parseFloat(l.totalPending), 0);
+    const totalPaid = ledgers.reduce((sum, l) => sum + parseFloat(l.totalPaid || '0'), 0);
+    const totalPending = ledgers.reduce((sum, l) => sum + parseFloat(l.totalPending || '0'), 0);
     const activeDevelopers = ledgers.filter(l => l.active).length;
     
     // Calculate this month's payments
@@ -330,7 +342,7 @@ export class MemStorage implements IStorage {
       id: p.id,
       developerName: p.developerName,
       amount: parseFloat(p.amount),
-      paymentStatus: p.paymentStatus,
+      paymentStatus: p.paymentStatus || 'pending',
       paymentDate: p.paymentDate?.toISOString() || null,
       taskTitle: p.taskTitle,
     }));
