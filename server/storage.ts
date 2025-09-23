@@ -14,6 +14,7 @@ import {
   type Task
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { hashPassword, comparePassword } from "./auth-utils";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -22,6 +23,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  authenticateUser(username: string, password: string): Promise<User | null>;
   
   // Payment methods (enhanced with multi-project)
   getPayments(filters?: { 
@@ -316,8 +318,24 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    // Hash the password before storing
+    const hashedPassword = await hashPassword(insertUser.password);
+    const user: User = { ...insertUser, password: hashedPassword, id };
     this.users.set(id, user);
+    return user;
+  }
+
+  async authenticateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) {
+      return null;
+    }
+    
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+    
     return user;
   }
 
