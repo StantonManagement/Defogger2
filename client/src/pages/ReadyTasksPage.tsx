@@ -98,36 +98,6 @@ export default function ReadyTasksPage() {
       paymentStatus: 'confirmed' as const,
       budget: 1920,
       project: 'collections_system'
-    },
-    {
-      id: 'TASK-006',
-      title: 'Implement email notifications',
-      priority: 'medium' as const,
-      estimatedDays: 4,
-      component: 'Backend',
-      status: 'ready' as const,
-      paymentStatus: 'pending' as const,
-      budget: 2400
-    },
-    {
-      id: 'TASK-007',
-      title: 'Add unit tests for auth module',
-      priority: 'low' as const,
-      estimatedDays: 2,
-      component: 'Testing',
-      status: 'ready' as const,
-      paymentStatus: 'confirmed' as const,
-      budget: 1200
-    },
-    {
-      id: 'TASK-008',
-      title: 'Create API documentation',
-      priority: 'medium' as const,
-      estimatedDays: 3,
-      component: 'Documentation',
-      status: 'ready' as const,
-      paymentStatus: 'pending' as const,
-      budget: 1800
     }
   ];
 
