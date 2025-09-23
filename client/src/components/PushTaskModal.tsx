@@ -24,10 +24,12 @@ interface PushTaskModalProps {
 
 // Fallback developers for when GitHub API is not available
 const fallbackDevelopers = [
-  { login: 'kurt', name: 'Kurt Anderson', load: 4, maxLoad: 5 },
-  { login: 'sarah', name: 'Sarah Chen', load: 2, maxLoad: 5 },
-  { login: 'mike', name: 'Mike Johnson', load: 5, maxLoad: 5 },
-  { login: 'alex', name: 'Alex Rodriguez', load: 1, maxLoad: 4 },
+  { login: 'kurt', name: 'Kurt', load: 0, maxLoad: 5 },
+  { login: 'jose', name: 'Jose Enrico Maxino', load: 1, maxLoad: 5 },
+  { login: 'christian', name: 'Christian Sumoba', load: 1, maxLoad: 5 },
+  { login: 'cedrick', name: 'Cedrick Barzaga', load: 1, maxLoad: 5 },
+  { login: 'gabriel', name: 'Gabriel Jerdhy Lapuz', load: 1, maxLoad: 5 },
+  { login: 'paul', name: 'Paul Limbo', load: 1, maxLoad: 5 },
 ];
 
 const priorityLabels = {

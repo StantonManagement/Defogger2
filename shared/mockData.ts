@@ -191,12 +191,12 @@ Notes from user feedback session.
     {
       filename: "task-001-oauth.md",
       title: "Implement GitHub OAuth",
-      for: "Christian",
+      for: "Christian Sumoba",
       days: 3,
       priority: "high",
       content: `# Task: Implement GitHub OAuth
 
-**For:** Christian  
+**For:** Christian Sumoba  
 **Days:** 3  
 **Priority:** High
 
@@ -225,12 +225,12 @@ Update the authentication system to use GitHub OAuth instead of personal access 
     {
       filename: "task-002-task-cards.md",
       title: "Redesign Task Cards",
-      for: "Sarah",
+      for: "Gabriel Jerdhy Lapuz",
       days: 2,
       priority: "medium",
       content: `# Task: Redesign Task Cards
 
-**For:** Sarah  
+**For:** Gabriel Jerdhy Lapuz  
 **Days:** 2  
 **Priority:** Medium
 
@@ -258,12 +258,12 @@ Improve the visual design of task cards to be more informative and visually appe
     {
       filename: "issue-123-api-optimization.md",
       title: "API Performance Optimization",
-      for: "Mike",
+      for: "Paul Limbo",
       days: 5,
       priority: "high",
       content: `# Issue #123: API Performance Optimization
 
-**For:** Mike  
+**For:** Paul Limbo  
 **Days:** 5  
 **Priority:** High  
 **GitHub:** https://github.com/StantonManagement/Defogger2/issues/123
@@ -292,12 +292,12 @@ Optimize API endpoints that are currently slow and causing user experience issue
     {
       filename: "completed-user-auth.md",
       title: "User Authentication System",
-      for: "Alex",
+      for: "Alex Korallus-Shapiro",
       days: 4,
       priority: "high",
       content: `# Completed: User Authentication System
 
-**For:** Alex  
+**For:** Alex Korallus-Shapiro  
 **Days:** 4 (completed in 3)  
 **Priority:** High  
 **Status:** ✅ Completed  

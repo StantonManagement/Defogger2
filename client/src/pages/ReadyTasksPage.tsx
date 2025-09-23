@@ -23,7 +23,7 @@ export default function ReadyTasksPage() {
       title: 'Implement user authentication system',
       priority: 'high' as const,
       estimatedDays: 5,
-      targetDev: 'Kurt Anderson',
+      targetDev: 'Kurt',
       component: 'Auth',
       status: 'ready' as const
     },
@@ -40,7 +40,7 @@ export default function ReadyTasksPage() {
       title: 'Fix mobile responsive layout',
       priority: 'high' as const,
       estimatedDays: 2,
-      targetDev: 'Sarah Chen',
+      targetDev: 'Gabriel Jerdhy Lapuz',
       component: 'UI',
       status: 'ready' as const
     },
@@ -57,7 +57,7 @@ export default function ReadyTasksPage() {
       title: 'Add dark mode support',
       priority: 'medium' as const,
       estimatedDays: 3,
-      targetDev: 'Mike Johnson',
+      targetDev: 'Paul Limbo',
       component: 'UI',
       status: 'ready' as const
     },

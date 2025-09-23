@@ -31,7 +31,7 @@ interface DeveloperWorkload {
 // Mock developer workload data
 const mockDeveloperWorkloads: DeveloperWorkload[] = [
   {
-    name: "Christian",
+    name: "Christian Sumoba",
     avatar: "https://github.com/christian.png",
     tasksCount: 7,
     capacity: 70,
@@ -45,8 +45,8 @@ const mockDeveloperWorkloads: DeveloperWorkload[] = [
     ]
   },
   {
-    name: "Sarah",
-    avatar: "https://github.com/sarah.png",
+    name: "Gabriel Jerdhy Lapuz",
+    avatar: "https://github.com/gabriel.png",
     tasksCount: 4,
     capacity: 45,
     oldestTaskDays: 5,
@@ -58,8 +58,8 @@ const mockDeveloperWorkloads: DeveloperWorkload[] = [
     ]
   },
   {
-    name: "Mike",
-    avatar: "https://github.com/mike.png",
+    name: "Paul Limbo",
+    avatar: "https://github.com/paul.png",
     tasksCount: 9,
     capacity: 85,
     oldestTaskDays: 12,
@@ -72,8 +72,8 @@ const mockDeveloperWorkloads: DeveloperWorkload[] = [
     ]
   },
   {
-    name: "Alex",
-    avatar: "https://github.com/alex.png",
+    name: "Jose Enrico Maxino",
+    avatar: "https://github.com/jose.png",
     tasksCount: 2,
     capacity: 25,
     oldestTaskDays: 2,
@@ -315,7 +315,7 @@ export default function WorkloadPage() {
                 High Workload Alert
               </p>
               <p className="text-xs text-red-600 dark:text-red-300">
-                Mike is at 85% capacity with tasks over 7 days old. Consider redistributing work.
+                Paul Limbo is at 85% capacity with tasks over 7 days old. Consider redistributing work.
               </p>
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function WorkloadPage() {
                 Capacity Available
               </p>
               <p className="text-xs text-amber-600 dark:text-amber-300">
-                Alex has low utilization (25%) and could take on additional tasks.
+                Jose Enrico Maxino has low utilization (25%) and could take on additional tasks.
               </p>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function WorkloadPage() {
                 Balanced Workload
               </p>
               <p className="text-xs text-green-600 dark:text-green-300">
-                Sarah and Christian have optimal task distribution and recent activity.
+                Gabriel Jerdhy Lapuz and Christian Sumoba have optimal task distribution and recent activity.
               </p>
             </div>
           </div>
