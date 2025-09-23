@@ -19,60 +19,85 @@ export default function ReadyTasksPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fallback mock data
+  // Fallback mock data (aligned with collections_system components)
   const fallbackTasks = [
     {
-      id: 'TASK-001',
-      title: 'Implement user authentication system',
+      id: 'T-001',
+      title: 'API Framework Core Module',
       priority: 'high' as const,
       estimatedDays: 5,
-      targetDev: 'Kurt',
-      component: 'Auth',
+      targetDev: 'Paul Limbo',
+      assignedTo: 'Paul Limbo',
+      component: 'api_framework',
       status: 'ready' as const,
       paymentStatus: 'pending' as const,
-      budget: 2400
+      budget: 2400,
+      project: 'collections_system'
     },
     {
-      id: 'TASK-002',
-      title: 'Add payment processing integration',
-      priority: 'medium' as const,
-      estimatedDays: 3,
-      component: 'Payment',
+      id: 'T-002',
+      title: 'Task Queue Processing System',
+      priority: 'high' as const,
+      estimatedDays: 6,
+      targetDev: 'Jose Enrico Maxino',
+      assignedTo: 'Jose Enrico Maxino',
+      component: 'task_queue',
       status: 'ready' as const,
       paymentStatus: 'sent' as const,
-      budget: 1800
+      budget: 2880,
+      project: 'collections_system'
     },
     {
-      id: 'TASK-003',
-      title: 'Fix mobile responsive layout',
-      priority: 'high' as const,
-      estimatedDays: 2,
-      targetDev: 'Gabriel Jerdhy Lapuz',
-      component: 'UI',
+      id: 'T-003',
+      title: 'Event Bus Communication Layer',
+      priority: 'medium' as const,
+      estimatedDays: 4,
+      targetDev: 'Christian Sumoba',
+      assignedTo: 'Christian Sumoba',
+      component: 'event_bus',
       status: 'ready' as const,
       paymentStatus: 'confirmed' as const,
-      budget: 1200
+      budget: 1920,
+      project: 'collections_system'
     },
     {
-      id: 'TASK-004',
-      title: 'Optimize database queries',
-      priority: 'low' as const,
-      estimatedDays: 4,
-      component: 'Backend',
+      id: 'T-004',
+      title: 'Notification Service Integration',
+      priority: 'medium' as const,
+      estimatedDays: 5,
+      targetDev: 'Cedrick Barzaga',
+      assignedTo: 'Cedrick Barzaga',
+      component: 'notifications',
       status: 'ready' as const,
       paymentStatus: 'pending' as const,
-      budget: 2400
+      budget: 2400,
+      project: 'collections_system'
     },
     {
-      id: 'TASK-005',
-      title: 'Add dark mode support',
-      priority: 'medium' as const,
-      estimatedDays: 3,
-      targetDev: 'Paul Limbo',
-      component: 'UI',
+      id: 'T-005',
+      title: 'Document Processing Pipeline',
+      priority: 'high' as const,
+      estimatedDays: 7,
+      targetDev: 'Gabriel Jerdhy Lapuz',
+      assignedTo: 'Gabriel Jerdhy Lapuz',
+      component: 'documents',
       status: 'ready' as const,
       paymentStatus: 'sent' as const,
-      budget: 1800
+      budget: 3360,
+      project: 'collections_system'
+    },
+    {
+      id: 'T-006',
+      title: 'SMS Agent Communication Module',
+      priority: 'medium' as const,
+      estimatedDays: 4,
+      targetDev: 'Kurt',
+      assignedTo: 'Kurt',
+      component: 'sms_agent',
+      status: 'ready' as const,
+      paymentStatus: 'confirmed' as const,
+      budget: 1920,
+      project: 'collections_system'
     },
     {
       id: 'TASK-006',
