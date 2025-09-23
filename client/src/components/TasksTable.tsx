@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Eye, GitBranch, Archive } from "lucide-react";
+import { Search, Filter, Eye, GitBranch, Archive, DollarSign, Check, Clock, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Task {
@@ -16,15 +16,18 @@ interface Task {
   targetDev?: string;
   component: string;
   status: 'ready' | 'assigned' | 'in-progress';
+  paymentStatus?: 'pending' | 'confirmed' | 'sent';
+  budget?: number;
 }
 
 interface TasksTableProps {
   tasks: Task[];
   showActions?: boolean;
   onPushToGitHub?: (taskId: string) => void;
+  onPaymentStatusChange?: (taskId: string, status: 'pending' | 'confirmed' | 'sent') => void;
 }
 
-export default function TasksTable({ tasks, showActions = true, onPushToGitHub }: TasksTableProps) {
+export default function TasksTable({ tasks, showActions = true, onPushToGitHub, onPaymentStatusChange }: TasksTableProps) {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -51,6 +54,44 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub }
       case 'low': return 'secondary';
       default: return 'outline';
     }
+  };
+
+  const getPaymentStatusColor = (status?: string) => {
+    switch (status) {
+      case 'confirmed': return 'default'; // Green
+      case 'sent': return 'secondary'; // Yellow
+      case 'pending':
+      default: return 'destructive'; // Red
+    }
+  };
+
+  const getPaymentStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'confirmed': return <Check className="h-3 w-3" />;
+      case 'sent': return <Clock className="h-3 w-3" />;
+      case 'pending':
+      default: return <AlertCircle className="h-3 w-3" />;
+    }
+  };
+
+  const getNextPaymentStatus = (status?: string): 'pending' | 'sent' | 'confirmed' => {
+    switch (status) {
+      case 'pending': return 'sent';
+      case 'sent': return 'confirmed';
+      case 'confirmed': return 'pending';
+      default: return 'sent';
+    }
+  };
+
+  const handlePaymentStatusToggle = (taskId: string, currentStatus?: string) => {
+    const newStatus = getNextPaymentStatus(currentStatus);
+    if (onPaymentStatusChange) {
+      onPaymentStatusChange(taskId, newStatus);
+    }
+    toast({
+      title: "Payment Status Updated",
+      description: `Payment status changed to ${newStatus}`,
+    });
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -169,6 +210,7 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub }
                 <th className="text-left p-2 font-medium">Est. Days</th>
                 <th className="text-left p-2 font-medium">Component</th>
                 <th className="text-left p-2 font-medium">Target Dev</th>
+                <th className="text-left p-2 font-medium">Payment Status</th>
                 {showActions && <th className="text-left p-2 font-medium">Actions</th>}
               </tr>
             </thead>
@@ -196,6 +238,26 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub }
                     ) : (
                       <span className="text-muted-foreground">Unassigned</span>
                     )}
+                  </td>
+                  <td className="p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handlePaymentStatusToggle(task.id, task.paymentStatus)}
+                      className="h-8 px-2 hover-elevate"
+                      data-testid={`button-payment-status-${task.id}`}
+                    >
+                      <Badge 
+                        variant={getPaymentStatusColor(task.paymentStatus)}
+                        className="flex items-center gap-1 cursor-pointer"
+                      >
+                        {getPaymentStatusIcon(task.paymentStatus)}
+                        <span className="text-xs">
+                          {task.paymentStatus === 'confirmed' ? 'Paid' : 
+                           task.paymentStatus === 'sent' ? 'Sent' : 'Pending'}
+                        </span>
+                      </Badge>
+                    </Button>
                   </td>
                   {showActions && (
                     <td className="p-2">

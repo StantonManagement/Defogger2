@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TasksTable from "@/components/TasksTable";
 import PushTaskModal from "@/components/PushTaskModal";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ReadyTasksPage() {
   const [pushModalOpen, setPushModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [localTasks, setLocalTasks] = useState<any[]>([]);
+  const { toast } = useToast();
 
   // Fetch real mock tasks from API
   const { data: tasksData, isLoading, error } = useQuery({
@@ -25,7 +28,9 @@ export default function ReadyTasksPage() {
       estimatedDays: 5,
       targetDev: 'Kurt',
       component: 'Auth',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'pending' as const,
+      budget: 2400
     },
     {
       id: 'TASK-002',
@@ -33,7 +38,9 @@ export default function ReadyTasksPage() {
       priority: 'medium' as const,
       estimatedDays: 3,
       component: 'Payment',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'sent' as const,
+      budget: 1800
     },
     {
       id: 'TASK-003',
@@ -42,7 +49,9 @@ export default function ReadyTasksPage() {
       estimatedDays: 2,
       targetDev: 'Gabriel Jerdhy Lapuz',
       component: 'UI',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'confirmed' as const,
+      budget: 1200
     },
     {
       id: 'TASK-004',
@@ -50,7 +59,9 @@ export default function ReadyTasksPage() {
       priority: 'low' as const,
       estimatedDays: 4,
       component: 'Backend',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'pending' as const,
+      budget: 2400
     },
     {
       id: 'TASK-005',
@@ -59,7 +70,9 @@ export default function ReadyTasksPage() {
       estimatedDays: 3,
       targetDev: 'Paul Limbo',
       component: 'UI',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'sent' as const,
+      budget: 1800
     },
     {
       id: 'TASK-006',
@@ -67,7 +80,9 @@ export default function ReadyTasksPage() {
       priority: 'medium' as const,
       estimatedDays: 4,
       component: 'Backend',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'pending' as const,
+      budget: 2400
     },
     {
       id: 'TASK-007',
@@ -75,7 +90,9 @@ export default function ReadyTasksPage() {
       priority: 'low' as const,
       estimatedDays: 2,
       component: 'Testing',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'confirmed' as const,
+      budget: 1200
     },
     {
       id: 'TASK-008',
@@ -83,12 +100,21 @@ export default function ReadyTasksPage() {
       priority: 'medium' as const,
       estimatedDays: 3,
       component: 'Documentation',
-      status: 'ready' as const
+      status: 'ready' as const,
+      paymentStatus: 'pending' as const,
+      budget: 1800
     }
   ];
 
   // Use real data if available, otherwise fall back to local mock data
-  const tasks = (tasksData as any)?.success ? (tasksData as any).data : fallbackTasks;
+  const initialTasks = (tasksData as any)?.success ? (tasksData as any).data : fallbackTasks;
+  
+  // Initialize local tasks state when data changes
+  useEffect(() => {
+    setLocalTasks(initialTasks);
+  }, [JSON.stringify(initialTasks)]);
+  
+  const tasks = localTasks.length > 0 ? localTasks : initialTasks;
 
   const handlePushToGitHub = (taskId: string) => {
     const task = tasks.find((t: any) => t.id === taskId);
@@ -98,6 +124,26 @@ export default function ReadyTasksPage() {
         description: `Implementation task for ${task.title.toLowerCase()}. Priority: ${task.priority}, Estimated: ${task.estimatedDays} days.`
       });
       setPushModalOpen(true);
+    }
+  };
+
+  const handlePaymentStatusChange = (taskId: string, newStatus: 'pending' | 'sent' | 'confirmed') => {
+    // Update local state
+    setLocalTasks(prevTasks => {
+      return prevTasks.map(task => 
+        task.id === taskId 
+          ? { ...task, paymentStatus: newStatus }
+          : task
+      );
+    });
+    
+    const task = tasks.find((t: any) => t.id === taskId);
+    if (task) {
+      toast({
+        title: "Payment Status Updated",
+        description: `${task.title} payment status changed to ${newStatus}`,
+      });
+      // TODO: Implement API call to update payment status in database
     }
   };
 
@@ -147,7 +193,11 @@ export default function ReadyTasksPage() {
           </CardContent>
         </Card>
       ) : (
-        <TasksTable tasks={tasks} onPushToGitHub={handlePushToGitHub} />
+        <TasksTable 
+          tasks={tasks} 
+          onPushToGitHub={handlePushToGitHub}
+          onPaymentStatusChange={handlePaymentStatusChange}
+        />
       )}
 
       {/* Push Task Modal */}
