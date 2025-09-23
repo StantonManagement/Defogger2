@@ -128,6 +128,9 @@ export default function ReadyTasksPage() {
   };
 
   const handlePaymentStatusChange = (taskId: string, newStatus: 'pending' | 'sent' | 'confirmed') => {
+    // Find the task before updating state
+    const taskToUpdate = tasks.find((t: any) => t.id === taskId);
+    
     // Update local state
     setLocalTasks(prevTasks => {
       return prevTasks.map(task => 
@@ -137,14 +140,15 @@ export default function ReadyTasksPage() {
       );
     });
     
-    const task = tasks.find((t: any) => t.id === taskId);
-    if (task) {
+    // Show single toast notification
+    if (taskToUpdate) {
       toast({
         title: "Payment Status Updated",
-        description: `${task.title} payment status changed to ${newStatus}`,
+        description: `${taskToUpdate.title} payment status changed to ${newStatus}`,
       });
-      // TODO: Implement API call to update payment status in database
     }
+    
+    // TODO: Implement API call to update payment status in database
   };
 
   return (

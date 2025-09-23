@@ -58,10 +58,10 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub, 
 
   const getPaymentStatusColor = (status?: string) => {
     switch (status) {
-      case 'confirmed': return 'default'; // Green
-      case 'sent': return 'secondary'; // Yellow
+      case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; // Green
+      case 'sent': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; // Yellow
       case 'pending':
-      default: return 'destructive'; // Red
+      default: return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; // Red
     }
   };
 
@@ -88,10 +88,7 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub, 
     if (onPaymentStatusChange) {
       onPaymentStatusChange(taskId, newStatus);
     }
-    toast({
-      title: "Payment Status Updated",
-      description: `Payment status changed to ${newStatus}`,
-    });
+    // Toast is handled by the parent component to avoid duplicates
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -247,16 +244,15 @@ export default function TasksTable({ tasks, showActions = true, onPushToGitHub, 
                       className="h-8 px-2 hover-elevate"
                       data-testid={`button-payment-status-${task.id}`}
                     >
-                      <Badge 
-                        variant={getPaymentStatusColor(task.paymentStatus)}
-                        className="flex items-center gap-1 cursor-pointer"
+                      <div 
+                        className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md text-xs font-medium ${getPaymentStatusColor(task.paymentStatus)}`}
                       >
                         {getPaymentStatusIcon(task.paymentStatus)}
-                        <span className="text-xs">
+                        <span>
                           {task.paymentStatus === 'confirmed' ? 'Paid' : 
                            task.paymentStatus === 'sent' ? 'Sent' : 'Pending'}
                         </span>
-                      </Badge>
+                      </div>
                     </Button>
                   </td>
                   {showActions && (
