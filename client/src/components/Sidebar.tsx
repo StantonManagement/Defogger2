@@ -10,7 +10,9 @@ import {
   ChevronRight,
   Home,
   FileText,
-  FolderOpen
+  FolderOpen,
+  DollarSign,
+  CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,6 +24,8 @@ const navigationItems = [
   { path: "/workload", label: "Team Workload", icon: Users },
   { path: "/ready-tasks", label: "Ready Tasks", icon: CheckSquare },
   { path: "/task-review", label: "Task Review", icon: ClipboardCheck },
+  { path: "/payments", label: "Payments", icon: DollarSign },
+  { path: "/payments/ledger", label: "Developer Ledger", icon: CreditCard },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

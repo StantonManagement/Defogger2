@@ -12,6 +12,8 @@ import WorkloadPage from "@/pages/WorkloadPage";
 import ReadyTasksPage from "@/pages/ReadyTasksPage";
 import TeamWorkloadPage from "@/pages/TeamWorkloadPage";
 import TaskReviewPage from "@/pages/TaskReviewPage";
+import PaymentDashboard from "@/pages/PaymentDashboard";
+import DeveloperLedger from "@/pages/DeveloperLedger";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/ready-tasks" component={ReadyTasksPage} />
       <Route path="/team-workload" component={TeamWorkloadPage} />
       <Route path="/task-review" component={TaskReviewPage} />
+      <Route path="/payments" component={PaymentDashboard} />
+      <Route path="/payments/ledger" component={DeveloperLedger} />
       <Route path="/decisions">
         <Redirect to="/task-review" />
       </Route>
