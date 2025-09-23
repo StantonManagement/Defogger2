@@ -152,7 +152,7 @@ export default function PaymentDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card data-testid="card-total-paid">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+            <CardTitle className="text-sm font-medium">Components in POC</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -160,18 +160,18 @@ export default function PaymentDashboard() {
               <div className="h-7 bg-muted rounded w-20"></div>
             ) : (
               <div className="text-2xl font-bold" data-testid="text-total-paid">
-                ${stats?.totalPaid.toFixed(2) || '0.00'}
+                5
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              Confirmed payments
+              Active POC components
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-pending-payments">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending POC Payments</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -179,11 +179,11 @@ export default function PaymentDashboard() {
               <div className="h-7 bg-muted rounded w-20"></div>
             ) : (
               <div className="text-2xl font-bold" data-testid="text-pending-amount">
-                ${stats?.totalPending.toFixed(2) || '0.00'}
+                ${stats?.totalPending.toFixed(2) || '375.00'}
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              {payments.filter(p => p.paymentStatus === 'pending').length} tasks
+              {payments.filter(p => p.paymentStatus === 'pending').length} components
             </p>
           </CardContent>
         </Card>
@@ -209,7 +209,7 @@ export default function PaymentDashboard() {
 
         <Card data-testid="card-this-month">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Component Developers</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -217,11 +217,11 @@ export default function PaymentDashboard() {
               <div className="h-7 bg-muted rounded w-20"></div>
             ) : (
               <div className="text-2xl font-bold" data-testid="text-this-month">
-                ${stats?.thisMonth.toFixed(2) || '0.00'}
+                6
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              Current month
+              Active team members
             </p>
           </CardContent>
         </Card>
@@ -249,7 +249,7 @@ export default function PaymentDashboard() {
               data-testid="button-mark-all-paid"
             >
               <Check className="h-4 w-4 mr-2" />
-              {markAllPaidMutation.isPending ? 'Updating...' : 'Mark Test Projects Paid'}
+              {markAllPaidMutation.isPending ? 'Updating...' : 'Mark Component POCs Paid'}
             </Button>
             
             <Button
@@ -261,6 +261,124 @@ export default function PaymentDashboard() {
               <Download className="h-4 w-4 mr-2" />
               Export Ledger
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Component Overview */}
+      <Card data-testid="card-component-overview">
+        <CardHeader>
+          <CardTitle>System Components Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Task Queue Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-task-queue">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">📬</div>
+                <div>
+                  <h3 className="font-semibold">Task Queue</h3>
+                  <p className="text-sm text-muted-foreground">Jose Enrico Maxino</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Core async processing component for collections system</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">POC: $75 pending</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Event Bus Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-event-bus">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">📡</div>
+                <div>
+                  <h3 className="font-semibold">Event Bus</h3>
+                  <p className="text-sm text-muted-foreground">Christian Sumoba</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Real-time messaging between collection agents</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">POC: $75 pending</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Notifications Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-notifications">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">📱</div>
+                <div>
+                  <h3 className="font-semibold">Notifications</h3>
+                  <p className="text-sm text-muted-foreground">Cedrick Barzaga</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Multi-channel tenant communication system</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">POC: $75 pending</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Documents Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-documents">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">📄</div>
+                <div>
+                  <h3 className="font-semibold">Documents</h3>
+                  <p className="text-sm text-muted-foreground">Gabriel Jerdhy Lapuz</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">OCR for payment receipts and lease documents</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">POC: $75 pending</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* API Framework Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-api-framework">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">🔧</div>
+                <div>
+                  <h3 className="font-semibold">API Framework</h3>
+                  <p className="text-sm text-muted-foreground">Paul Limbo</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">FastAPI foundation for collections system</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">POC: $75 pending</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* SMS Agent Component */}
+            <div className="p-4 border rounded-lg hover-elevate" data-testid="component-sms-agent">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl">💬</div>
+                <div>
+                  <h3 className="font-semibold">SMS Agent</h3>
+                  <p className="text-sm text-muted-foreground">Kurt</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Automated SMS communication with tenants</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Active Development</span>
+                  <Badge variant="default">Active</Badge>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
