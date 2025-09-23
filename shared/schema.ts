@@ -17,14 +17,45 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Payment Tracking Tables
+// Project definitions
+export const projects = pgTable("projects", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  budget: decimal("budget", { precision: 10, scale: 2 }).default("0"),
+  budgetUsed: decimal("budget_used", { precision: 10, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("active"),
+  createdAt: timestamp("created_at").default(sql`NOW()`),
+});
+
+// Component dependencies
+export const componentDependencies = pgTable("component_dependencies", {
+  component: varchar("component", { length: 50 }),
+  dependsOn: varchar("depends_on", { length: 50 }),
+  project: varchar("project", { length: 50 }),
+  integrationStatus: varchar("integration_status", { length: 50 }).default("pending"),
+});
+
+// Developer capacity tracking
+export const developerCapacity = pgTable("developer_capacity", {
+  developerName: varchar("developer_name", { length: 100 }),
+  project: varchar("project", { length: 50 }),
+  hoursAllocated: integer("hours_allocated").default(0),
+  hoursUsed: integer("hours_used").default(0),
+  weekOf: timestamp("week_of"),
+});
+
+// Payment Tracking Tables (Enhanced with multi-project support)
 export const developerPayments = pgTable("developer_payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   developerName: varchar("developer_name", { length: 100 }).notNull(),
   taskId: varchar("task_id", { length: 200 }),
   taskTitle: varchar("task_title", { length: 500 }),
+  project: varchar("project", { length: 50 }).default("collections_system"),
+  component: varchar("component", { length: 50 }),
+  billableTo: varchar("billable_to", { length: 50 }).default("internal"),
+  crossProject: boolean("cross_project").default(false),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  paymentType: varchar("payment_type", { length: 50 }), // 'test_project', 'task', 'bonus'
+  paymentType: varchar("payment_type", { length: 50 }), // 'component_poc', 'component_integration', etc.
   paymentMethod: varchar("payment_method", { length: 50 }), // 'manual', 'onlinejobs', 'paypal', 'wise'
   paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'sent', 'confirmed'
   paymentDate: timestamp("payment_date"),
@@ -76,6 +107,40 @@ export const paymentStatsSchema = z.object({
 });
 
 export type PaymentStats = z.infer<typeof paymentStatsSchema>;
+
+// Project schema types
+export const insertProjectSchema = createInsertSchema(projects);
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
+// Component dependency types
+export type ComponentDependency = typeof componentDependencies.$inferSelect;
+
+// Developer capacity types  
+export type DeveloperCapacity = typeof developerCapacity.$inferSelect;
+
+// Multi-project stats schema
+export const multiProjectStatsSchema = z.object({
+  projectStats: z.array(z.object({
+    project: z.string(),
+    name: z.string(),
+    componentsInProgress: z.number(),
+    totalComponents: z.number(),
+    budgetUsed: z.number(),
+    totalBudget: z.number(),
+    activeDevelopers: z.number(),
+    pendingPayments: z.number(),
+  })),
+  crossProjectTasks: z.number(),
+  overCapacityDevelopers: z.array(z.string()),
+  blockedComponents: z.array(z.object({
+    component: z.string(),
+    project: z.string(),
+    blockedBy: z.string(),
+  })),
+});
+
+export type MultiProjectStats = z.infer<typeof multiProjectStatsSchema>;
 
 // Payment Form Schema
 export const paymentFormSchema = z.object({
@@ -130,7 +195,7 @@ export const githubCollaboratorSchema = z.object({
 
 export type GitHubCollaborator = z.infer<typeof githubCollaboratorSchema>;
 
-// Task Review Schema
+// Task Review Schema (Enhanced with multi-project support)
 export const taskSchema = z.object({
   id: z.string(),
   title: z.string().min(1, "Title is required"),
@@ -139,7 +204,11 @@ export const taskSchema = z.object({
   budget: z.number().min(0, "Budget must be non-negative"),
   paymentTerms: z.enum(["on-complete", "50-50", "25-50-25"]),
   developer: z.string().min(1, "Developer is required"),
-  status: z.enum(["ready", "needs-review", "in-progress", "completed"]),
+  project: z.string().default("collections_system"),
+  component: z.string().optional(),
+  crossProject: z.boolean().default(false),
+  dependencies: z.array(z.string()).optional(),
+  status: z.enum(["ready", "needs-review", "in-progress", "completed", "blocked"]),
   description: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),

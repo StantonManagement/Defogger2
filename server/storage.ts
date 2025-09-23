@@ -5,7 +5,13 @@ import {
   type InsertDeveloperPayment,
   type DeveloperLedger,
   type InsertDeveloperLedger,
-  type PaymentStats
+  type PaymentStats,
+  type Project,
+  type InsertProject,
+  type ComponentDependency,
+  type DeveloperCapacity,
+  type MultiProjectStats,
+  type Task
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -17,8 +23,15 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Payment methods
-  getPayments(filters?: { developerName?: string; status?: string; fromDate?: string; toDate?: string }): Promise<DeveloperPayment[]>;
+  // Payment methods (enhanced with multi-project)
+  getPayments(filters?: { 
+    developerName?: string; 
+    status?: string; 
+    project?: string; 
+    component?: string;
+    fromDate?: string; 
+    toDate?: string; 
+  }): Promise<DeveloperPayment[]>;
   getPayment(id: string): Promise<DeveloperPayment | undefined>;
   createPayment(payment: InsertDeveloperPayment): Promise<DeveloperPayment>;
   updatePaymentStatus(id: string, status: string): Promise<DeveloperPayment | undefined>;
@@ -31,30 +44,70 @@ export interface IStorage {
   
   // Stats methods
   getPaymentStats(): Promise<PaymentStats>;
+  getMultiProjectStats(): Promise<MultiProjectStats>;
+  
+  // Project methods
+  getProjects(): Promise<Project[]>;
+  getProject(id: string): Promise<Project | undefined>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: string, project: Partial<Project>): Promise<Project>;
+  
+  // Component dependency methods
+  getComponentDependencies(project?: string): Promise<ComponentDependency[]>;
+  addComponentDependency(dependency: ComponentDependency): Promise<ComponentDependency>;
+  
+  // Developer capacity methods
+  getDeveloperCapacity(developerName?: string, weekOf?: Date): Promise<DeveloperCapacity[]>;
+  updateDeveloperCapacity(capacity: DeveloperCapacity): Promise<DeveloperCapacity>;
+  
+  // Task methods (enhanced)
+  getTasks(filters?: { 
+    project?: string; 
+    component?: string;
+    developer?: string; 
+    status?: string; 
+    crossProject?: boolean;
+  }): Promise<Task[]>;
+  getTask(id: string): Promise<Task | undefined>;
+  createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task>;
+  updateTask(id: string, task: Partial<Task>): Promise<Task>;
+  validateTaskAssignment(task: Partial<Task>): Promise<{ valid: boolean; error?: string; warning?: string }>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private payments: Map<string, DeveloperPayment>;
   private ledgers: Map<string, DeveloperLedger>;
+  private projects: Map<string, Project>;
+  private componentDependencies: Map<string, ComponentDependency[]>;
+  private developerCapacities: Map<string, DeveloperCapacity>;
+  private tasks: Map<string, Task>;
 
   constructor() {
     this.users = new Map();
     this.payments = new Map();
     this.ledgers = new Map();
+    this.projects = new Map();
+    this.componentDependencies = new Map();
+    this.developerCapacities = new Map();
+    this.tasks = new Map();
     
     // Initialize with mock data as specified
     this.initializeMockData();
   }
 
   private initializeMockData() {
-    // Mock payments for the component developers
+    // Mock payments for the component developers (Enhanced with multi-project support)
     const mockPayments: DeveloperPayment[] = [
       {
         id: 'pay_001',
         developerName: 'Jose Enrico Maxino',
         taskId: 'task_001',
         taskTitle: 'Task Queue System Component',
+        project: 'collections_system',
+        component: 'task_queue',
+        billableTo: 'internal',
+        crossProject: false,
         amount: '75.00',
         paymentType: 'component_poc',
         paymentMethod: 'bank_transfer',
@@ -69,6 +122,10 @@ export class MemStorage implements IStorage {
         developerName: 'Christian Sumoba',
         taskId: 'task_002',
         taskTitle: 'Event Bus System Component',
+        project: 'collections_system',
+        component: 'event_bus',
+        billableTo: 'internal',
+        crossProject: false,
         amount: '75.00',
         paymentType: 'component_poc',
         paymentMethod: 'bank_transfer',
@@ -83,6 +140,10 @@ export class MemStorage implements IStorage {
         developerName: 'Cedrick Barzaga',
         taskId: 'task_003',
         taskTitle: 'Notification Service Component',
+        project: 'collections_system',
+        component: 'notifications',
+        billableTo: 'internal',
+        crossProject: false,
         amount: '75.00',
         paymentType: 'component_poc',
         paymentMethod: 'bank_transfer',
@@ -97,6 +158,10 @@ export class MemStorage implements IStorage {
         developerName: 'Gabriel Jerdhy Lapuz',
         taskId: 'task_004',
         taskTitle: 'Document Processing Component',
+        project: 'collections_system',
+        component: 'documents',
+        billableTo: 'internal',
+        crossProject: false,
         amount: '75.00',
         paymentType: 'component_poc',
         paymentMethod: 'bank_transfer',
@@ -111,6 +176,10 @@ export class MemStorage implements IStorage {
         developerName: 'Paul Limbo',
         taskId: 'task_005',
         taskTitle: 'Core API Framework Component',
+        project: 'collections_system',
+        component: 'api_framework',
+        billableTo: 'internal',
+        crossProject: false,
         amount: '75.00',
         paymentType: 'component_poc',
         paymentMethod: 'bank_transfer',
@@ -121,6 +190,51 @@ export class MemStorage implements IStorage {
         updatedAt: new Date(),
       },
     ];
+
+    // Initialize mock projects
+    const mockProjects: Project[] = [
+      {
+        id: 'collections_system',
+        name: 'Collections System',
+        budget: '10000.00',
+        budgetUsed: '375.00',
+        status: 'active',
+        createdAt: new Date(),
+      },
+      {
+        id: 'property_management', 
+        name: 'Property Management',
+        budget: '5000.00',
+        budgetUsed: '0.00',
+        status: 'planning',
+        createdAt: new Date(),
+      },
+      {
+        id: 'client_work',
+        name: 'Client Projects',
+        budget: '15000.00', 
+        budgetUsed: '2500.00',
+        status: 'active',
+        createdAt: new Date(),
+      },
+    ];
+
+    // Initialize mock component dependencies
+    const mockDependencies: ComponentDependency[] = [
+      { component: 'task_queue', dependsOn: 'api_framework', project: 'collections_system', integrationStatus: 'pending' },
+      { component: 'notifications', dependsOn: 'task_queue', project: 'collections_system', integrationStatus: 'pending' },
+      { component: 'notifications', dependsOn: 'event_bus', project: 'collections_system', integrationStatus: 'pending' },
+      { component: 'documents', dependsOn: 'api_framework', project: 'collections_system', integrationStatus: 'pending' },
+      { component: 'event_bus', dependsOn: 'api_framework', project: 'collections_system', integrationStatus: 'pending' },
+    ];
+
+    // Initialize projects
+    for (const project of mockProjects) {
+      this.projects.set(project.id, project);
+    }
+
+    // Initialize component dependencies
+    this.componentDependencies.set('collections_system', mockDependencies);
 
     // Mock ledgers for component developers
     const mockLedgers: DeveloperLedger[] = [
@@ -207,8 +321,15 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  // Payment methods implementation
-  async getPayments(filters?: { developerName?: string; status?: string; fromDate?: string; toDate?: string }): Promise<DeveloperPayment[]> {
+  // Payment methods implementation (Enhanced with multi-project support)
+  async getPayments(filters?: { 
+    developerName?: string; 
+    status?: string; 
+    project?: string; 
+    component?: string;
+    fromDate?: string; 
+    toDate?: string; 
+  }): Promise<DeveloperPayment[]> {
     let payments = Array.from(this.payments.values());
     
     if (filters?.developerName) {
@@ -217,6 +338,14 @@ export class MemStorage implements IStorage {
     
     if (filters?.status) {
       payments = payments.filter(p => p.paymentStatus === filters.status);
+    }
+    
+    if (filters?.project) {
+      payments = payments.filter(p => p.project === filters.project);
+    }
+    
+    if (filters?.component) {
+      payments = payments.filter(p => p.component === filters.component);
     }
     
     if (filters?.fromDate) {
@@ -248,6 +377,10 @@ export class MemStorage implements IStorage {
       developerName: insertPayment.developerName,
       taskId: insertPayment.taskId || null,
       taskTitle: insertPayment.taskTitle || null,
+      project: insertPayment.project || 'collections_system',
+      component: insertPayment.component || null,
+      billableTo: insertPayment.billableTo || 'internal',
+      crossProject: insertPayment.crossProject || false,
       amount: insertPayment.amount,
       paymentType: insertPayment.paymentType || null,
       paymentMethod: insertPayment.paymentMethod || null,
@@ -386,6 +519,205 @@ export class MemStorage implements IStorage {
       thisMonth,
       recentPayments,
     };
+  }
+
+  // Multi-project stats method
+  async getMultiProjectStats(): Promise<MultiProjectStats> {
+    const projects = Array.from(this.projects.values());
+    const payments = Array.from(this.payments.values());
+    
+    const projectStats = projects.map(project => {
+      const projectPayments = payments.filter(p => p.project === project.id);
+      const uniqueDevelopers = new Set(projectPayments.map(p => p.developerName));
+      
+      return {
+        project: project.id,
+        name: project.name,
+        componentsInProgress: projectPayments.filter(p => p.paymentStatus === 'pending').length,
+        totalComponents: 6, // hardcoded for now, could be dynamic
+        budgetUsed: parseFloat(project.budgetUsed || '0'),
+        totalBudget: parseFloat(project.budget || '0'),
+        activeDevelopers: uniqueDevelopers.size,
+        pendingPayments: projectPayments.filter(p => p.paymentStatus === 'pending').length,
+      };
+    });
+    
+    return {
+      projectStats,
+      crossProjectTasks: payments.filter(p => p.crossProject).length,
+      overCapacityDevelopers: [], // TODO: implement capacity checking
+      blockedComponents: [], // TODO: implement dependency blocking logic
+    };
+  }
+
+  // Project methods
+  async getProjects(): Promise<Project[]> {
+    return Array.from(this.projects.values());
+  }
+
+  async getProject(id: string): Promise<Project | undefined> {
+    return this.projects.get(id);
+  }
+
+  async createProject(project: InsertProject): Promise<Project> {
+    const newProject: Project = {
+      id: project.id,
+      name: project.name,
+      budget: project.budget || '0.00',
+      budgetUsed: project.budgetUsed || '0.00',
+      status: project.status || 'active',
+      createdAt: new Date(),
+    };
+    this.projects.set(project.id, newProject);
+    return newProject;
+  }
+
+  async updateProject(id: string, project: Partial<Project>): Promise<Project> {
+    const existing = this.projects.get(id);
+    if (!existing) {
+      throw new Error(`Project ${id} not found`);
+    }
+    const updated = { ...existing, ...project };
+    this.projects.set(id, updated);
+    return updated;
+  }
+
+  // Component dependency methods
+  async getComponentDependencies(project?: string): Promise<ComponentDependency[]> {
+    if (project) {
+      return this.componentDependencies.get(project) || [];
+    }
+    
+    const allDependencies: ComponentDependency[] = [];
+    const depsArray = Array.from(this.componentDependencies.values());
+    for (const deps of depsArray) {
+      allDependencies.push(...deps);
+    }
+    return allDependencies;
+  }
+
+  async addComponentDependency(dependency: ComponentDependency): Promise<ComponentDependency> {
+    const project = dependency.project || 'unknown';
+    const projectDeps = this.componentDependencies.get(project) || [];
+    projectDeps.push(dependency);
+    this.componentDependencies.set(project, projectDeps);
+    return dependency;
+  }
+
+  // Developer capacity methods
+  async getDeveloperCapacity(developerName?: string, weekOf?: Date): Promise<DeveloperCapacity[]> {
+    const capacities = Array.from(this.developerCapacities.values());
+    
+    let filtered = capacities;
+    if (developerName) {
+      filtered = filtered.filter(c => c.developerName === developerName);
+    }
+    if (weekOf) {
+      filtered = filtered.filter(c => c.weekOf?.getTime() === weekOf.getTime());
+    }
+    
+    return filtered;
+  }
+
+  async updateDeveloperCapacity(capacity: DeveloperCapacity): Promise<DeveloperCapacity> {
+    const key = `${capacity.developerName}-${capacity.project}-${capacity.weekOf?.getTime()}`;
+    this.developerCapacities.set(key, capacity);
+    return capacity;
+  }
+
+  // Task methods (enhanced)
+  async getTasks(filters?: { 
+    project?: string; 
+    component?: string;
+    developer?: string; 
+    status?: string; 
+    crossProject?: boolean;
+  }): Promise<Task[]> {
+    let tasks = Array.from(this.tasks.values());
+    
+    if (filters?.project) {
+      tasks = tasks.filter(t => t.project === filters.project);
+    }
+    if (filters?.component) {
+      tasks = tasks.filter(t => t.component === filters.component);
+    }
+    if (filters?.developer) {
+      tasks = tasks.filter(t => t.developer === filters.developer);
+    }
+    if (filters?.status) {
+      tasks = tasks.filter(t => t.status === filters.status);
+    }
+    if (filters?.crossProject !== undefined) {
+      tasks = tasks.filter(t => t.crossProject === filters.crossProject);
+    }
+    
+    return tasks;
+  }
+
+  async getTask(id: string): Promise<Task | undefined> {
+    return this.tasks.get(id);
+  }
+
+  async createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const newTask: Task = {
+      ...task,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.tasks.set(id, newTask);
+    return newTask;
+  }
+
+  async updateTask(id: string, task: Partial<Task>): Promise<Task> {
+    const existing = this.tasks.get(id);
+    if (!existing) {
+      throw new Error(`Task ${id} not found`);
+    }
+    const updated = {
+      ...existing,
+      ...task,
+      updatedAt: new Date().toISOString(),
+    };
+    this.tasks.set(id, updated);
+    return updated;
+  }
+
+  async validateTaskAssignment(task: Partial<Task>): Promise<{ valid: boolean; error?: string; warning?: string }> {
+    // Check if developer is already assigned to this component
+    if (task.developer && task.component) {
+      const existingTasks = Array.from(this.tasks.values());
+      const conflicting = existingTasks.find(t => 
+        t.developer === task.developer && 
+        t.component === task.component && 
+        t.id !== task.id
+      );
+      
+      if (conflicting) {
+        return { 
+          valid: false, 
+          error: `${task.developer} already owns ${task.component}` 
+        };
+      }
+    }
+    
+    // Check developer capacity (simplified - in practice would check hours)
+    if (task.developer) {
+      const developerTasks = Array.from(this.tasks.values()).filter(t => 
+        t.developer === task.developer && t.status === 'in-progress'
+      );
+      
+      if (developerTasks.length >= 3) { // arbitrary limit
+        return {
+          valid: false,
+          warning: `${task.developer} is over capacity this week`
+        };
+      }
+    }
+    
+    return { valid: true };
   }
 }
 
