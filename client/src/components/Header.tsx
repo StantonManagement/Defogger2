@@ -9,7 +9,6 @@ import ProjectSelector from "@/components/ProjectSelector";
 export default function Header() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentProject, setCurrentProject] = useState('collections_system');
 
   // Theme management
   useEffect(() => {
@@ -38,12 +37,6 @@ export default function Header() {
     }
   };
 
-  const handleProjectChange = (projectId: string) => {
-    setCurrentProject(projectId);
-    // TODO: Implement project filtering logic
-    console.log('Project changed to:', projectId);
-  };
-
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between h-full px-6">
@@ -56,10 +49,7 @@ export default function Header() {
           
           <div className="h-8 w-px bg-border" />
           
-          <ProjectSelector 
-            currentProject={currentProject}
-            onProjectChange={handleProjectChange}
-          />
+          <ProjectSelector />
         </div>
 
         {/* Center section - Search */}

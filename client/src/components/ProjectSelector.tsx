@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronDown, FolderOpen } from "lucide-react";
 import {
   DropdownMenu,
@@ -7,26 +6,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useProject } from "@/contexts/ProjectContext";
 
-interface Project {
-  id: string;
-  name: string;
-  status: 'active' | 'planning' | 'completed';
-}
-
-interface ProjectSelectorProps {
-  currentProject?: string;
-  onProjectChange: (projectId: string) => void;
-}
-
-const projects: Project[] = [
-  { id: 'all', name: 'All Projects', status: 'active' },
-  { id: 'collections_system', name: 'Collections System', status: 'active' },
-  { id: 'property_management', name: 'Property Management', status: 'planning' },
-  { id: 'client_work', name: 'Client Projects', status: 'active' },
-];
-
-export default function ProjectSelector({ currentProject = 'all', onProjectChange }: ProjectSelectorProps) {
+export default function ProjectSelector() {
+  const { currentProject, setCurrentProject, projects } = useProject();
   const selectedProject = projects.find(p => p.id === currentProject) || projects[0];
 
   const getStatusColor = (status: string) => {
@@ -71,7 +54,7 @@ export default function ProjectSelector({ currentProject = 'all', onProjectChang
           <DropdownMenuItem
             key={project.id}
             className="flex items-center gap-3 p-3 cursor-pointer"
-            onClick={() => onProjectChange(project.id)}
+            onClick={() => setCurrentProject(project.id)}
             data-testid={`option-project-${project.id}`}
           >
             <div className="flex items-center gap-2 flex-1">
