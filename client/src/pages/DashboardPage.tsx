@@ -1,7 +1,4 @@
-import { CheckSquare, Clock, AlertTriangle, Users, Github, TestTube } from "lucide-react";
-import TaskStatsCard from "@/components/TaskStatsCard";
-import ActivityFeed from "@/components/ActivityFeed";
-import QuickActions from "@/components/QuickActions";
+import { Github, TestTube } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import TaskWorkflowStats from "@/components/TaskWorkflowStats";
+import WorkflowVisualization from "@/components/WorkflowVisualization";
+import TaskQuickActions from "@/components/TaskQuickActions";
+import ActivityFeed from "@/components/ActivityFeed";
 
 interface GitHubUser {
   id: string;
@@ -26,6 +27,16 @@ interface UserResponse {
   connected?: boolean;
 }
 
+interface WorkflowStatsResponse {
+  success: boolean;
+  data: {
+    inbox: number;
+    ready: number;
+    assigned: number;
+    archived: number;
+  };
+}
+
 export default function DashboardPage() {
   const { toast } = useToast();
   const [issueResponse, setIssueResponse] = useState<any>(null);
@@ -35,6 +46,14 @@ export default function DashboardPage() {
     queryKey: ['/api/user'],
     enabled: true
   });
+
+  // Fetch workflow statistics
+  const { data: workflowStatsResponse, isLoading: isStatsLoading } = useQuery<WorkflowStatsResponse>({
+    queryKey: ['/api/workflow/stats'],
+    enabled: true
+  });
+
+  const workflowStats = workflowStatsResponse?.data || { inbox: 0, ready: 0, assigned: 0, archived: 0 };
 
   // GitHub issue creation mutation
   const createIssueMutation = useMutation({
@@ -115,9 +134,9 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Task Management Dashboard</h1>
           <p className="text-muted-foreground">
-            Overview of your development team's task flow and productivity
+            From ideas to GitHub issues - streamlined workflow management
           </p>
         </div>
         
@@ -148,12 +167,51 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* GitHub Issue Test Section */}
+      {/* Task Workflow Stats */}
+      {isStatsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <TaskWorkflowStats stats={workflowStats} />
+      )}
+
+      {/* Workflow Visualization */}
+      {isStatsLoading ? (
+        <Card>
+          <CardHeader>
+            <div className="h-6 bg-muted rounded w-1/4"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-32 bg-muted rounded"></div>
+          </CardContent>
+        </Card>
+      ) : (
+        <WorkflowVisualization stats={workflowStats} />
+      )}
+
+      {/* Activity Feed and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ActivityFeed activities={mockActivities} />
+        <TaskQuickActions />
+      </div>
+
+      {/* GitHub Integration Test Section - Collapsed by default */}
       <Card className="border-dashed border-2 border-muted-foreground/25">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TestTube className="h-5 w-5" />
             <span>GitHub Integration Test</span>
+            <Badge variant="secondary" className="text-xs">Development</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -162,6 +220,8 @@ export default function DashboardPage() {
               onClick={handleCreateTestIssue}
               disabled={createIssueMutation.isPending || !user?.success}
               data-testid="button-create-test-issue"
+              size="sm"
+              variant="outline"
             >
               {createIssueMutation.isPending ? "Creating Issue..." : "Create Test GitHub Issue"}
             </Button>
@@ -196,52 +256,6 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <TaskStatsCard
-          title="Ready Tasks"
-          value={23}
-          subtitle="awaiting assignment"
-          trend="up"
-          trendValue="+3 today"
-          icon={<CheckSquare className="h-4 w-4" />}
-          color="success"
-        />
-        <TaskStatsCard
-          title="Assigned Tasks"
-          value={15}
-          subtitle="in progress"
-          trend="neutral"
-          trendValue="stable"
-          icon={<Clock className="h-4 w-4" />}
-          color="default"
-        />
-        <TaskStatsCard
-          title="Pending Decisions"
-          value={7}
-          subtitle="need approval"
-          trend="down"
-          trendValue="-2 today"
-          icon={<AlertTriangle className="h-4 w-4" />}
-          color="warning"
-        />
-        <TaskStatsCard
-          title="Team Capacity"
-          value={8}
-          subtitle="tasks available"
-          trend="up"
-          trendValue="+2 capacity"
-          icon={<Users className="h-4 w-4" />}
-          color="success"
-        />
-      </div>
-
-      {/* Activity and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActivityFeed activities={mockActivities} />
-        <QuickActions />
-      </div>
     </div>
   );
 }

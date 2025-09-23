@@ -8,15 +8,19 @@ import {
   Settings, 
   ChevronLeft,
   ChevronRight,
-  Home
+  Home,
+  FileText,
+  FolderOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
   { path: "/", label: "Dashboard", icon: Home },
+  { path: "/workflow", label: "Workflow Guide", icon: FileText },
+  { path: "/tasks", label: "Tasks", icon: FolderOpen },
+  { path: "/workload", label: "Team Workload", icon: Users },
   { path: "/ready-tasks", label: "Ready Tasks", icon: CheckSquare },
-  { path: "/team-workload", label: "Team Workload", icon: Users },
   { path: "/task-review", label: "Task Review", icon: ClipboardCheck },
   { path: "/settings", label: "Settings", icon: Settings },
 ];

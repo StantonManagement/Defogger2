@@ -76,6 +76,13 @@
   --chart-4: 35 85% 50%;
   --chart-5: 200 80% 45%;
 
+  /* Task Management Workflow Colors */
+  --inbox: 219 78% 61%;      /* Blue #3B82F6 */
+  --ready: 142 71% 45%;      /* Green #10B981 */
+  --assigned: 32 95% 44%;    /* Orange #F59E0B */
+  --archived: 220 9% 46%;    /* Gray #6B7280 */
+  --overdue: 0 84% 60%;      /* Red #EF4444 */
+
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -194,6 +201,13 @@
   --chart-3: 280 65% 70%;
   --chart-4: 35 85% 65%;
   --chart-5: 200 80% 65%;
+
+  /* Task Management Workflow Colors - Dark Mode */
+  --inbox: 219 78% 70%;      /* Lighter blue for dark mode */
+  --ready: 142 71% 55%;      /* Lighter green for dark mode */
+  --assigned: 32 95% 55%;    /* Lighter orange for dark mode */
+  --archived: 220 14% 60%;   /* Lighter gray for dark mode */
+  --overdue: 0 84% 65%;      /* Lighter red for dark mode */
 
   --shadow-2xs: 0px 2px 0px 0px hsl(220 10% 5% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(220 10% 5% / 0.00);
@@ -325,5 +339,73 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+/* Task Management Workflow Custom Classes */
+@layer utilities {
+  .workflow-inbox { @apply bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300; }
+  .workflow-ready { @apply bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300; }
+  .workflow-assigned { @apply bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300; }
+  .workflow-archived { @apply bg-gray-500/10 border-gray-500/20 text-gray-700 dark:text-gray-300; }
+  .workflow-overdue { @apply bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-300; }
+}
+
+/* Enhanced Markdown Typography */
+@layer components {
+  .markdown-content h1 {
+    @apply text-3xl font-bold border-b-2 border-border pb-2 mb-4 mt-6 first:mt-0;
+  }
+  
+  .markdown-content h2 {
+    @apply text-2xl font-semibold mt-6 mb-3;
+  }
+  
+  .markdown-content h3 {
+    @apply text-xl font-medium mt-4 mb-2;
+  }
+  
+  .markdown-content h4 {
+    @apply text-lg font-medium mt-3 mb-2;
+  }
+  
+  .markdown-content pre {
+    @apply bg-gray-900 dark:bg-gray-800 text-gray-100 dark:text-gray-200 p-4 rounded-lg overflow-x-auto my-4;
+  }
+  
+  .markdown-content code:not(pre code) {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .markdown-content blockquote {
+    @apply border-l-4 border-primary pl-4 py-2 bg-muted/50 italic my-4;
+  }
+  
+  .markdown-content table {
+    @apply w-full border-collapse my-4;
+  }
+  
+  .markdown-content th {
+    @apply bg-muted p-3 text-left border border-border font-semibold;
+  }
+  
+  .markdown-content td {
+    @apply p-3 border border-border;
+  }
+  
+  .markdown-content tr:hover {
+    @apply bg-muted/30;
+  }
+  
+  .markdown-content ul, .markdown-content ol {
+    @apply my-4 ml-6;
+  }
+  
+  .markdown-content li {
+    @apply mb-2;
+  }
+  
+  .markdown-content a {
+    @apply text-primary hover:underline font-medium;
   }
 }

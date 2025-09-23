@@ -456,6 +456,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Task Management API Routes
+  
+  // Get all folders with counts
+  app.get("/api/folders", async (req, res) => {
+    try {
+      const { mockFolders } = await import("../shared/mockData");
+      res.json({
+        success: true,
+        data: mockFolders
+      });
+    } catch (error: any) {
+      console.error('Error fetching folders:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to fetch folders' 
+      });
+    }
+  });
+
+  // Get workflow statistics  
+  app.get("/api/workflow/stats", async (req, res) => {
+    try {
+      const { mockWorkflowStats } = await import("../shared/mockData");
+      res.json({
+        success: true,
+        data: mockWorkflowStats
+      });
+    } catch (error: any) {
+      console.error('Error fetching workflow stats:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to fetch workflow stats' 
+      });
+    }
+  });
+
+  // Get all tasks in a folder
+  app.get("/api/tasks/:folder", async (req, res) => {
+    try {
+      const { folder } = req.params;
+      const { mockTasks } = await import("../shared/mockData");
+      
+      const folderTasks = mockTasks[folder];
+      if (!folderTasks) {
+        return res.status(404).json({
+          success: false,
+          error: `Folder '${folder}' not found`
+        });
+      }
+
+      res.json({
+        success: true,
+        data: folderTasks
+      });
+    } catch (error: any) {
+      console.error('Error fetching tasks:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to fetch tasks' 
+      });
+    }
+  });
+
+  // Get single task by folder and filename
+  app.get("/api/task/:folder/:filename", async (req, res) => {
+    try {
+      const { folder, filename } = req.params;
+      const { mockTasks } = await import("../shared/mockData");
+      
+      const folderTasks = mockTasks[folder];
+      if (!folderTasks) {
+        return res.status(404).json({
+          success: false,
+          error: `Folder '${folder}' not found`
+        });
+      }
+
+      const task = folderTasks.find(t => t.filename === filename);
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          error: `Task '${filename}' not found in folder '${folder}'`
+        });
+      }
+
+      res.json({
+        success: true,
+        data: task
+      });
+    } catch (error: any) {
+      console.error('Error fetching task:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to fetch task' 
+      });
+    }
+  });
+
+  // Get workflow documentation
+  app.get("/api/workflow/:docname", async (req, res) => {
+    try {
+      const { docname } = req.params;
+      const { mockWorkflowDocs } = await import("../shared/mockData");
+      
+      // Map docname to mockWorkflowDocs keys
+      const keyMapping: Record<string, string> = {
+        'readme': 'README',
+        'full-workflow': 'FULL_WORKFLOW', 
+        'quick-reference': 'QUICK_REFERENCE'
+      };
+      
+      const key = keyMapping[docname];
+      if (!key) {
+        return res.status(404).json({
+          success: false,
+          error: `Documentation '${docname}' not found`
+        });
+      }
+      
+      const doc = mockWorkflowDocs[key as keyof typeof mockWorkflowDocs];
+      if (!doc) {
+        return res.status(404).json({
+          success: false,
+          error: `Documentation content for '${docname}' not found`
+        });
+      }
+
+      res.json({
+        success: true,
+        data: doc
+      });
+    } catch (error: any) {
+      console.error('Error fetching workflow doc:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to fetch workflow documentation' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

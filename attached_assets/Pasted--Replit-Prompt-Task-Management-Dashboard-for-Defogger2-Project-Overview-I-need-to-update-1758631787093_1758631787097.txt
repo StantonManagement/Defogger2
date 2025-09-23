@@ -1,0 +1,301 @@
+# 📋 Replit Prompt: Task Management Dashboard for Defogger2
+
+## 🎯 Project Overview
+I need to update my existing Defogger2 app to display my task management workflow. The app already has GitHub OAuth working. Now it needs to read markdown files from my local folders and display them with excellent formatting that makes different sections easy to read and follow.
+
+## 🏗️ Current Setup
+- **Repo:** github.com/StantonManagement/Defogger2  
+- **Stack:** Node.js, Express, React, TypeScript, Tailwind CSS
+- **Auth:** GitHub OAuth (already working)
+- **Replit URL:** https://cloud-sync-node-dd224.replit.app
+
+## 📁 Folder Structure to Read From
+```
+C:\Users\Alex\OneDrive - stantoncap.com\ClaudeManaged\TaskManagement\
+├── README.md                    # Workflow instructions
+├── WEBAPP_WORKFLOW_PROMPT.md    # Full system documentation  
+├── QUICK_REFERENCE.md           # Quick cheat sheet
+├── INBOX/                       # Raw ideas from conversations
+├── READY_TO_ASSIGN/             # Clear, formatted tasks
+├── ASSIGNED/                    # Tasks pushed to GitHub
+└── ARCHIVE/                     # Completed work
+```
+
+## 🎨 UI Requirements
+
+### 1. Dashboard Page
+Create a clean dashboard with these sections:
+
+#### Top Stats Bar (4 cards)
+```jsx
+// Visual style: Large numbers with icons, colored backgrounds
+📥 INBOX: 5 items        // Blue background
+✅ READY: 3 tasks        // Green background  
+🚀 ASSIGNED: 7 active    // Orange background
+📦 ARCHIVED: 42 total    // Gray background
+```
+
+#### Workflow Visualization
+```jsx
+// Horizontal flow diagram with arrows
+[INBOX] → [READY] → [ASSIGNED] → [ARCHIVE]
+   5        3          7           42
+```
+
+#### Quick Actions Section
+- Button: "Process INBOX Items"
+- Button: "Review Ready Tasks"
+- Button: "Check Team Workload"
+- Button: "View Workflow Guide"
+
+### 2. Workflow Guide Page (/workflow)
+Display markdown files with EXCELLENT formatting:
+
+#### Requirements for Markdown Display
+- **Section Headers:** Different sizes, clear hierarchy
+- **Code Blocks:** Syntax highlighting with copy button
+- **Blockquotes:** Styled with left border and background
+- **Lists:** Proper indentation, checkboxes for task lists
+- **Tables:** Striped rows, hover effects
+- **Links:** Obvious clickable styling
+- **Emoji Support:** Render emojis properly
+
+#### Tabs for Different Docs
+```jsx
+// Tab navigation
+[README] [FULL WORKFLOW] [QUICK REFERENCE]
+
+// Content area with proper markdown rendering
+<ReactMarkdown 
+  remarkPlugins={[remarkGfm]}
+  components={{
+    h1: styled with large text and bottom border,
+    h2: styled with medium text and spacing,
+    code: syntax highlighted blocks,
+    blockquote: gray background with left accent,
+    table: striped and responsive
+  }}
+/>
+```
+
+### 3. Tasks View Page (/tasks)
+#### Folder Selector
+```jsx
+// Dropdown to select folder
+[Select Folder: INBOX ▼]
+```
+
+#### Task List Display
+For each markdown file, show:
+```jsx
+// Card layout with good spacing
+┌─────────────────────────────────┐
+│ 📄 task-001-oauth-implementation │
+│ For: Christian | Days: 3         │
+│ Priority: High                   │
+│ ─────────────────────────────     │
+│ Summary: Implement GitHub OAuth   │
+│ [View Details] [Push to GitHub]  │
+└─────────────────────────────────┘
+```
+
+#### Task Detail Modal
+When "View Details" clicked:
+- Full markdown rendering with sections
+- Collapsible sections for long content
+- Success criteria as checkboxes
+- Technical notes in monospace font
+
+### 4. Team Workload Page (/workload)
+```jsx
+// Developer cards with visual load indicators
+┌──────────────────────────┐
+│ Christian                │
+│ Load: ███████░░ 70%      │
+│ Tasks: 7                 │
+│ ⚠️ 2 tasks > 5 days old  │
+└──────────────────────────┘
+```
+
+## 🔧 Technical Implementation
+
+### Backend Endpoints Needed
+```javascript
+// File system reading
+GET /api/folders - List all folders with counts
+GET /api/tasks/:folder - Get all tasks in folder
+GET /api/task/:folder/:filename - Get single task content
+GET /api/workflow/:docname - Get workflow documentation
+
+// GitHub integration (already exists)
+POST /api/github/issue - Create issue
+GET /api/github/issues - Get all issues
+```
+
+### Frontend Components Structure
+```jsx
+// Key components to build
+<MarkdownViewer>     // Excellent MD rendering
+<TaskCard>           // Compact task display
+<TaskDetailModal>    // Full task view
+<WorkflowDiagram>    // Visual flow
+<StatsCard>          // Dashboard metrics
+<FolderSelector>     // Dropdown for folders
+<WorkloadChart>      // Developer capacity
+```
+
+### Markdown Rendering Setup
+```javascript
+// Install required packages
+npm install react-markdown remark-gfm 
+npm install react-syntax-highlighter
+npm install @tailwindcss/typography
+
+// Configure markdown component
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+```
+
+## 🎨 Styling Requirements
+
+### Color Scheme
+```css
+/* Status colors */
+--inbox: #3B82F6;      /* Blue */
+--ready: #10B981;      /* Green */
+--assigned: #F59E0B;   /* Orange */
+--archived: #6B7280;   /* Gray */
+--danger: #EF4444;     /* Red for overdue */
+```
+
+### Typography for Markdown
+```css
+/* Clear hierarchy */
+h1 { @apply text-3xl font-bold border-b-2 pb-2 mb-4; }
+h2 { @apply text-2xl font-semibold mt-6 mb-3; }
+h3 { @apply text-xl font-medium mt-4 mb-2; }
+
+/* Code blocks */
+pre { @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto; }
+code { @apply bg-gray-100 px-1 py-0.5 rounded text-sm; }
+
+/* Blockquotes */
+blockquote { @apply border-l-4 border-blue-500 pl-4 py-2 bg-blue-50; }
+
+/* Tables */
+table { @apply w-full border-collapse; }
+th { @apply bg-gray-100 p-2 text-left border; }
+td { @apply p-2 border; }
+tr:hover { @apply bg-gray-50; }
+```
+
+## 🔄 Mock Data Structure
+```javascript
+// For testing without file system
+const mockTasks = {
+  INBOX: [
+    {
+      filename: "2025-01-17-oauth-ideas.md",
+      title: "OAuth Implementation Ideas",
+      content: "# OAuth Ideas\n\n## Considerations..."
+    }
+  ],
+  READY_TO_ASSIGN: [
+    {
+      filename: "task-001-oauth.md",
+      title: "Implement GitHub OAuth",
+      for: "Christian",
+      days: 3,
+      priority: "High",
+      content: "# Task: GitHub OAuth\n\n..."
+    }
+  ]
+}
+```
+
+## ⚡ Priority Features
+
+1. **Markdown Rendering Excellence**
+   - Must handle all markdown features
+   - Copy buttons on code blocks
+   - Collapsible long sections
+   - Search within documents
+
+2. **Visual Workflow**
+   - Clear status indicators
+   - Color coding throughout
+   - Hover effects for interactivity
+   - Loading states for all actions
+
+3. **Responsive Design**
+   - Mobile-friendly task cards
+   - Readable markdown on all devices
+   - Touch-friendly buttons
+
+4. **Quick Actions**
+   - Keyboard shortcuts (? for help)
+   - Bulk select in INBOX
+   - Drag to reorder priorities
+   - Quick task creation modal
+
+## 🚀 Implementation Steps
+
+1. **Update existing dashboard** with stats cards and workflow diagram
+2. **Create MarkdownViewer component** with excellent styling
+3. **Build workflow guide page** with tabbed documentation
+4. **Implement tasks view** with folder selector and cards
+5. **Add task detail modal** with full markdown rendering
+6. **Create workload visualization** page
+7. **Add file system API endpoints** (mock for now)
+8. **Connect to GitHub API** for issue creation
+9. **Add search and filter** functionality
+10. **Implement keyboard shortcuts** and quick actions
+
+## 📝 Example Task Markdown to Test With
+```markdown
+# Task: Implement OAuth for Dashboard
+
+**For:** Christian  
+**Days:** 3  
+**Priority:** High
+
+## What needs to be built
+Update the authentication system to use GitHub OAuth instead of personal access tokens. This will allow multiple users to log in with their GitHub accounts.
+
+## Success looks like
+- [ ] Users can click "Login with GitHub" button
+- [ ] OAuth flow completes successfully
+- [ ] User info displayed in dashboard
+- [ ] Sessions persist across refreshes
+- [ ] Logout functionality works
+
+## Technical notes
+- Use existing OAuth implementation as reference
+- Store tokens securely in sessions
+- Implement refresh token logic
+
+## Dependencies
+- GitHub OAuth App credentials
+- Session storage setup
+```
+
+## 🎯 Success Criteria
+- [ ] Markdown renders beautifully with all formatting
+- [ ] Workflow is visually clear and intuitive
+- [ ] Task cards show right amount of info
+- [ ] All sections are clearly distinguished
+- [ ] Mobile responsive throughout
+- [ ] Loading states for all async operations
+- [ ] Error handling with helpful messages
+- [ ] Search works across all content
+- [ ] Keyboard navigation implemented
+- [ ] Dark mode support (bonus)
+
+## 💡 Remember
+- The app already has GitHub OAuth working - don't break it
+- Start with mock data, then add file system reading
+- Focus on making markdown look EXCELLENT
+- Different sections need clear visual separation
+- Users should understand workflow at a glance
