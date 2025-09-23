@@ -1,0 +1,105 @@
+🎯 Next Prompt for Replit
+Here's a focused prompt to fix the immediate issues:
+markdown# Add Payment Tracking to Defogger2
+
+## Current State
+The task management app is working but needs payment tracking features added and dummy data removed.
+
+## Required Changes
+
+### 1. Remove ALL Dummy Data
+Replace everywhere:
+- "John Developer" → "Alex Korallus-Shapiro"  
+- "Jane Smith", "John Doe" → Remove completely
+- "test_project" → "collections_poc" (These are component POCs, not tests)
+
+### 2. Add Payment Tracking System
+
+#### Database Schema
+Add new tables/collections:
+```sql
+CREATE TABLE payments (
+  id UUID PRIMARY KEY,
+  developer_name VARCHAR(100),
+  component VARCHAR(100),
+  amount DECIMAL(10,2),
+  payment_status ENUM('pending', 'paid', 'partial'),
+  payment_date TIMESTAMP,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE developer_ledger (
+  id UUID PRIMARY KEY,
+  developer_name VARCHAR(100) UNIQUE,
+  total_earned DECIMAL(10,2) DEFAULT 0,
+  total_paid DECIMAL(10,2) DEFAULT 0,
+  balance_due DECIMAL(10,2) DEFAULT 0,
+  last_payment_date TIMESTAMP,
+  payment_method VARCHAR(50) -- 'paypal', 'crypto', 'bank'
+);
+New UI Components
+
+Payment Status Column in task list:
+
+🔴 Unpaid (red)
+🟡 Partial (yellow)
+🟢 Paid (green)
+Click to toggle between states
+
+
+Developer Ledger Page (/ledger):
+
+   Developer     | Component        | Amount | Status  | Actions
+   --------------|------------------|--------|---------|----------
+   Jose          | Task Queue       | $75    | Pending | [Mark Paid]
+   Christian     | Event Bus        | $75    | Pending | [Mark Paid]
+   Cedrick       | Notifications    | $75    | Pending | [Mark Paid]
+   Gabriel       | Doc Processing   | $75    | Pending | [Mark Paid]
+   
+   Total Outstanding: $300
+
+Payment Modal when clicking [Mark Paid]:
+
+Date picker for payment date
+Amount field (pre-filled, editable for partial)
+Payment method dropdown
+Notes field
+[Confirm Payment] button
+
+
+
+3. Correct Developer List
+Use ONLY these developers (remove all others):
+
+Paul Limbo (API Framework)
+Jose Enrico Maxino (Task Queue)
+Christian Sumoba (Event Bus)
+Cedrick Barzaga (Notification Service)
+Gabriel Jerdhy Lapuz (Document Processing)
+Kurt (SMS Agent)
+
+4. Component Tracking
+Each task should track:
+
+project: "collections_system"
+component: "task_queue" | "event_bus" | "notifications" | "documents" | "api_framework" | "sms_agent"
+phase: "poc" | "mvp" | "production"
+
+5. Add Manual Override
+Since this is POC phase, add ability to:
+
+Manually mark payment status
+Edit amounts
+Add payment notes
+Export ledger as CSV
+
+Keep These Working
+
+GitHub OAuth login
+Task creation to GitHub issues
+Existing dashboard layout
+File reading from TaskManagement folder
+
+Test with Real Data
+Create test entries for the actual developers and components listed above, not dummy data.
